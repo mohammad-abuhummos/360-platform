@@ -41,10 +41,10 @@ export default function Login() {
             className=""
         >
             <div className="">
-                <div className="grid items-stretch  rounded-[32px] border border-black/15 bg-black/5  shadow-2xl shadow-black/40 ring-1 ring-black/10 backdrop-blur-3xl lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="grid items-stretch rounded-[32px] border border-black/15 bg-black/5 shadow-2xl shadow-black/40 ring-1 ring-black/10 backdrop-blur-3xl lg:grid-cols-[0.45fr_0.55fr]">
                     <section style={{
                         background: "linear-gradient(155deg,hsl(0, 0%, 25%), hsl(0, 0%, 0%))",
-                    }} className="rounded-r-[28px] bg-black p-8 text-zinc-900 sm:p-12 flex flex-col h-screen">
+                    }} className="relative flex flex-col h-screen rounded-r-[28px] bg-black p-8 text-zinc-900 sm:p-12 lg:-mr-[30px] lg:rounded-r-[40px] lg:shadow-2xl lg:shadow-black/60 lg:z-10">
                         <div className="flex items-center gap-4">
                             <img
                                 src="/logo.jpeg"
@@ -106,7 +106,7 @@ export default function Login() {
                         </form>
                     </section>
 
-                    <section className="relative hidden min-h-[420px] overflow-hidden  border border-black/20 bg-black/40 lg:flex">
+                    <section className="relative hidden min-h-[420px] overflow-hidden border border-black/20 bg-black/40 lg:flex">
                         <video
                             className="h-full w-full object-cover"
                             src="/login.mp4"
@@ -116,8 +116,8 @@ export default function Login() {
                             playsInline
                             poster="/logo.jpeg"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                        <div className="absolute bottom-8 left-8 right-8">
+                        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />
+                        <div className="absolute bottom-8 left-8 right-8 max-w-xl mx-auto">
                             <p className="text-3xl font-semibold leading-tight text-white sm:text-2xl">
                                 Human stories, immersive data.
                             </p>
