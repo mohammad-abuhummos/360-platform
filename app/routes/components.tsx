@@ -25,7 +25,7 @@ import { Combobox, ComboboxOption, ComboboxLabel, ComboboxDescription } from "..
 import { Navbar, NavbarDivider, NavbarSection, NavbarSpacer, NavbarItem, NavbarLabel } from "../components/navbar";
 import { Sidebar, SidebarHeader, SidebarBody, SidebarFooter, SidebarSection, SidebarDivider, SidebarSpacer, SidebarHeading, SidebarItem, SidebarLabel } from "../components/sidebar";
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [
     { title: "Components - Component Library" },
     { name: "description", content: "View all available components" },
@@ -36,6 +36,7 @@ export default function Components() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState("option1");
+  const [selectedComboboxValue, setSelectedComboboxValue] = useState<string | null>(null);
   const [checkboxValue, setCheckboxValue] = useState(false);
   const [switchValue, setSwitchValue] = useState(false);
 
@@ -151,7 +152,7 @@ export default function Components() {
             <div className="max-w-md">
               <CheckboxGroup>
                 <CheckboxField>
-                  <Checkbox checked={checkboxValue} onChange={(e) => setCheckboxValue(e.target.checked)} />
+                  <Checkbox checked={checkboxValue} onChange={(checked) => setCheckboxValue(checked === true)} />
                   <Label>Checkbox option</Label>
                 </CheckboxField>
                 <CheckboxField>
@@ -344,10 +345,10 @@ export default function Components() {
             <Subheading level={2} className="mb-4">Combobox</Subheading>
             <div className="max-w-md">
               <Combobox
-                value={selectedValue}
-                onChange={setSelectedValue}
+                value={selectedComboboxValue}
+                onChange={(value) => setSelectedComboboxValue(value)}
                 options={["option1", "option2", "option3"]}
-                displayValue={(value) => value || ""}
+                displayValue={(value) => value ?? ""}
                 placeholder="Search..."
               >
                 {(option) => (
