@@ -1,4 +1,4 @@
-import type { Route } from "./+types/home";
+import type { Route } from "./+types/index";
 import type { SVGProps } from "react";
 import { DashboardLayout } from "../components/dashboard-layout";
 import { Heading, Subheading } from "../components/heading";
@@ -139,7 +139,7 @@ function CurrencyCard() {
           <Badge color="blue" className="w-fit">
             Stripe connected
           </Badge>
-          <Subheading level={2}>Set your store currency</Subheading>
+          <Subheading level={2} className="dark:text-zinc-900">Set your store currency</Subheading>
           <Text className="text-sm text-zinc-600">
             You&apos;re now connected to Stripe. Before you can add products you need to set the currency your store
             will show on all listings.
@@ -149,8 +149,8 @@ function CurrencyCard() {
             <DescriptionDetails>Once your currency is saved you cannot change it.</DescriptionDetails>
           </DescriptionList>
         </div>
-        <div className="w-full max-w-xs space-y-3">
-          <Select defaultValue="">
+        <div className="w-full max-w-xs space-y-3 dark:text-zinc-900">
+          <Select defaultValue="" className="dark:text-zinc-900">
             <option value="" disabled>
               Select
             </option>
@@ -171,14 +171,14 @@ function TeamEventsCard() {
   return (
     <section className={cardBaseClass}>
       <div className="flex flex-wrap items-center gap-4">
-        <Subheading level={2}>Team events</Subheading>
-        <Button plain className="ml-auto text-sm text-blue-600">
+        <Subheading level={2} className="dark:text-zinc-900">Team events</Subheading>
+        <Button color="blue" className="ml-auto text-sm ">
           Show calendar
         </Button>
       </div>
       <div className="mt-6 rounded-2xl border border-dashed border-zinc-200 p-8 text-center">
         <CalendarLargeIcon className="mx-auto size-16 text-blue-500" />
-        <Heading level={3} className="mt-4 text-xl font-semibold">
+        <Heading level={3} className="mt-4 text-xl font-semibold dark:text-zinc-900">
           Get started with the calendar
         </Heading>
         <Text className="mt-2 text-sm text-zinc-600">
@@ -202,8 +202,8 @@ function LastGamesCard() {
   return (
     <section className={cardBaseClass}>
       <div className="flex items-center justify-between">
-        <Subheading level={2}>Last games</Subheading>
-        <Button plain className="text-sm text-blue-600">
+        <Subheading level={2} className="dark:text-zinc-900">Last games</Subheading>
+        <Button className="text-sm text-blue-600">
           View all
         </Button>
       </div>
@@ -214,7 +214,7 @@ function LastGamesCard() {
               <p className="text-xs font-medium uppercase text-zinc-500">
                 {game.date} · {game.time}
               </p>
-              <Heading level={3} className="text-lg font-semibold">
+              <Heading level={3} className="text-lg font-semibold dark:text-zinc-900">
                 {game.opponent}
               </Heading>
               <Text className="text-sm text-zinc-500">{game.location}</Text>
@@ -232,10 +232,10 @@ function LastGamesCard() {
 
 function WallCard() {
   return (
-    <section className={`${cardBaseClass} h-full`}>
+    <section className={`${cardBaseClass} h-fit`}>
       <div className="flex flex-wrap items-center gap-4">
-        <Subheading level={2}>Wall</Subheading>
-        <Badge color="zinc">Jordan Knights Football Club</Badge>
+        <Subheading level={2} className="dark:text-zinc-900">Wall</Subheading>
+        <Badge color="zinc" className="dark:text-zinc-900">Jordan Knights Football Club</Badge>
         <Button color="blue" className="ml-auto">
           <PlusIcon data-slot="icon" />
           New post
@@ -246,14 +246,14 @@ function WallCard() {
         {wallPosts.map((post) => (
           <article key={post.id} className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <Avatar initials={post.initials} alt={post.author} />
+              <Avatar initials={post.initials} alt={post.author} className="size-10 bg-blue-200" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-zinc-900">{post.author}</p>
                 <p className="text-xs text-zinc-500">{post.time}</p>
               </div>
               <span className="ml-auto text-xs text-zinc-500">{post.seen}</span>
             </div>
-            <Heading level={3} className="text-base font-semibold text-zinc-900">
+            <Heading level={3} className="text-base font-semibold text-zinc-900 dark:text-zinc-900">
               {post.title}
             </Heading>
             <Text className="text-sm text-zinc-600">{post.content}</Text>
@@ -261,7 +261,7 @@ function WallCard() {
               <ul className="space-y-1">
                 {post.links.map((link) => (
                   <li key={link.label}>
-                    <TextLink href={link.href}>{link.label}</TextLink>
+                    <TextLink color="blue" href={link.href} className="text-zinc-950 dark:text-zinc-900">{link.label}</TextLink>
                   </li>
                 ))}
               </ul>
@@ -281,14 +281,14 @@ function WallCard() {
 function SupportCard() {
   return (
     <section className={cardBaseClass}>
-      <Subheading level={2}>Need help?</Subheading>
+      <Subheading level={2} className="dark:text-zinc-900">Need help?</Subheading>
       <Text className="mt-2 text-sm text-zinc-600">
         Chat with SMT Dev support or browse the documentation to learn more about scheduling, payments, and
         registrations.
       </Text>
       <div className="mt-4 flex flex-wrap gap-3">
-        <Button outline>Visit support center</Button>
-        <Button plain className="text-sm text-blue-600">
+        <Button >Visit support center</Button>
+        <Button color="blue" className="text-sm text-blue-600">
           Contact support
         </Button>
       </div>

@@ -54,6 +54,7 @@ export default function Components() {
             <Subheading level={2} className="mb-4">Buttons</Subheading>
             <div className="flex flex-wrap gap-3">
               <Button>Default Button</Button>
+              <Button color="red">Test</Button>
               <Button color="blue">Blue Button</Button>
               <Button color="green">Green Button</Button>
               <Button outline>Outline Button</Button>

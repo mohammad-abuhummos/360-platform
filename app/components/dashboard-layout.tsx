@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useLocation } from "react-router";
+import { useState } from "react";
 import { SidebarLayout } from "./sidebar-layout";
 import {
   Sidebar,
@@ -33,6 +34,10 @@ type NavigationSection = {
     icon: ComponentType<IconProps>;
     href?: string;
     badge?: string;
+    subItems?: {
+      label: string;
+      href: string;
+    }[];
   }[];
 };
 
@@ -41,14 +46,23 @@ const navigationSections: NavigationSection[] = [
     items: [
       { label: "Home", icon: HomeIcon, href: "/" },
       { label: "Calendar", icon: CalendarIcon, href: "/calendar" },
-      { label: "Chat", icon: ChatIcon },
+      { label: "Chat", icon: ChatIcon, href: "/chat" },
     ],
   },
   {
     heading: "Organization Management",
     items: [
       { label: "Team", icon: UsersIcon, badge: "4", href: "/team" },
-      { label: "Management", icon: BriefcaseIcon },
+      {
+        label: "Management",
+        icon: BriefcaseIcon,
+        subItems: [
+          { label: "Overview", href: "/management/overview" },
+          { label: "Organization", href: "/management/organization" },
+          { label: "Contacts", href: "/management/contacts" },
+          { label: "Attendance", href: "/management/attendance" },
+        ]
+      },
       { label: "Payments", icon: WalletIcon },
       { label: "Registrations", icon: ClipboardIcon },
       { label: "Posts", icon: MegaphoneIcon },
@@ -66,11 +80,14 @@ const navigationSections: NavigationSection[] = [
 ];
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  return <SidebarLayout sidebar={<DashboardSidebar />} navbar={<DashboardNavbar />}>{children}</SidebarLayout>;
+  return <SidebarLayout sidebar={<DashboardSidebar />} navbar={<DashboardNavbar />}>
+    {children}
+  </SidebarLayout>;
 }
 
 function DashboardSidebar() {
   const location = useLocation();
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
 
   const isCurrent = (href?: string) => {
     if (!href) return false;
@@ -78,6 +95,13 @@ function DashboardSidebar() {
       return location.pathname === "/";
     }
     return location.pathname.startsWith(href);
+  };
+
+  const toggleDropdown = (label: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [label]: !prev[label]
+    }));
   };
 
   return (
@@ -102,20 +126,51 @@ function DashboardSidebar() {
             <SidebarSection key={section.heading ?? index}>
               {section.heading && <SidebarHeading className="text-white/70">{section.heading}</SidebarHeading>}
               {section.items.map((item) => {
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isOpen = openDropdowns[item.label];
+                const isParentActive = hasSubItems && item.subItems?.some(subItem => isCurrent(subItem.href));
+
                 const content = (
                   <>
                     <item.icon data-slot="icon" className="text-white/70" />
                     <SidebarLabel className="text-white">{item.label}</SidebarLabel>
                     {item.badge && <Badge color="zinc">{item.badge}</Badge>}
+                    {hasSubItems && (
+                      <ChevronIcon
+                        className={`ml-auto size-4 text-white/70 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                      />
+                    )}
                   </>
                 );
 
-                return item.href ? (
-                  <SidebarItem key={item.label} href={item.href} current={isCurrent(item.href)}>
-                    {content}
-                  </SidebarItem>
-                ) : (
-                  <SidebarItem key={item.label}>{content}</SidebarItem>
+                return (
+                  <div key={item.label}>
+                    {item.href ? (
+                      <SidebarItem href={item.href} current={isCurrent(item.href)}>
+                        {content}
+                      </SidebarItem>
+                    ) : hasSubItems ? (
+                      <SidebarItem onClick={() => toggleDropdown(item.label)} current={isParentActive}>
+                        {content}
+                      </SidebarItem>
+                    ) : (
+                      <SidebarItem>{content}</SidebarItem>
+                    )}
+
+                    {hasSubItems && isOpen && (
+                      <div className="ml-9 mt-1 space-y-1">
+                        {item.subItems?.map((subItem) => (
+                          <SidebarItem
+                            key={subItem.label}
+                            href={subItem.href}
+                            current={isCurrent(subItem.href)}
+                          >
+                            <SidebarLabel className="text-sm text-white/90">{subItem.label}</SidebarLabel>
+                          </SidebarItem>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
               {index === 0 && <SidebarDivider className="border-white/10" />}
@@ -314,6 +369,14 @@ function BellIcon({ className, ...props }: IconProps) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props} className={iconClasses(className)}>
       <path d="M18 10a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props} className={iconClasses(className)}>
+      <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
