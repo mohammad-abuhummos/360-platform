@@ -1,7 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { animate, motion } from "motion/react";
-import { useWheel, useGesture } from "@use-gesture/react";
-import { Stage, Layer, Circle, Rect, Line, Text, Arrow, RegularPolygon, Transformer } from "react-konva";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { animate, motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "motion/react";
+import { Stage, Layer, Circle, Line, Text, Arrow, RegularPolygon, Transformer } from "react-konva";
 import Konva from "konva";
 
 export const meta = () => {
@@ -18,6 +17,7 @@ interface Clip {
     endTime: number;
     duration: number;
     type: string;
+    description?: string;
 }
 
 interface Annotation {
@@ -41,16 +41,317 @@ interface Annotation {
     rotation?: number;
     scaleX?: number;
     scaleY?: number;
-    isDragging?: boolean;
-    tracking?: {
-        enabled: boolean;
-        playerId?: string;
-        offsetX: number;
-        offsetY: number;
-    };
 }
 
 type Tool = 'select' | 'text' | 'circle' | 'spotlight' | 'line' | 'arrow' | 'connection' | 'polygon';
+
+// Modern SVG Icons
+const Icons = {
+    home: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+    ),
+    folder: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+        </svg>
+    ),
+    calendar: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+    ),
+    clipboard: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        </svg>
+    ),
+    users: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+    ),
+    share: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+        </svg>
+    ),
+    timer: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+        </svg>
+    ),
+    tag: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+            <line x1="7" y1="7" x2="7.01" y2="7" />
+        </svg>
+    ),
+    grid: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+        </svg>
+    ),
+    settings: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+    ),
+    help: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+    ),
+    monitor: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+    ),
+    layers: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+            <polyline points="2 17 12 22 22 17" />
+            <polyline points="2 12 12 17 22 12" />
+        </svg>
+    ),
+    // Drawing tools
+    cursor: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 4l7.07 17 2.51-7.39L21 11.07z" />
+        </svg>
+    ),
+    text: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M4 7V4h16v3" />
+            <path d="M12 4v16" />
+            <path d="M8 20h8" />
+        </svg>
+    ),
+    circle: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="9" />
+        </svg>
+    ),
+    spotlight: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" />
+        </svg>
+    ),
+    line: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="5" y1="19" x2="19" y2="5" />
+        </svg>
+    ),
+    connection: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="6" cy="6" r="3" />
+            <circle cx="18" cy="18" r="3" />
+            <path d="M8.5 8.5L15.5 15.5" strokeDasharray="3 3" />
+        </svg>
+    ),
+    arrow: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+        </svg>
+    ),
+    polygon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" />
+        </svg>
+    ),
+    // Player controls
+    play: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3" />
+        </svg>
+    ),
+    pause: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16" rx="1" />
+            <rect x="14" y="4" width="4" height="16" rx="1" />
+        </svg>
+    ),
+    skipBack: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="19 20 9 12 19 4 19 20" fill="currentColor" />
+            <line x1="5" y1="19" x2="5" y2="5" />
+        </svg>
+    ),
+    skipForward: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="5 4 15 12 5 20 5 4" fill="currentColor" />
+            <line x1="19" y1="5" x2="19" y2="19" />
+        </svg>
+    ),
+    rewind: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 19l-7-7 7-7" />
+            <path d="M18 19l-7-7 7-7" />
+        </svg>
+    ),
+    fastForward: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M13 5l7 7-7 7" />
+            <path d="M6 5l7 7-7 7" />
+        </svg>
+    ),
+    record: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="8" />
+        </svg>
+    ),
+    volume: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+    ),
+    zoomIn: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="11" y1="8" x2="11" y2="14" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+        </svg>
+    ),
+    zoomOut: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+        </svg>
+    ),
+    search: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+    ),
+    filter: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+        </svg>
+    ),
+    check: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <polyline points="20 6 9 17 4 12" />
+        </svg>
+    ),
+    chevronDown: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="6 9 12 15 18 9" />
+        </svg>
+    ),
+    moreHorizontal: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="1.5" />
+            <circle cx="19" cy="12" r="1.5" />
+            <circle cx="5" cy="12" r="1.5" />
+        </svg>
+    ),
+    x: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+    ),
+    upload: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+    ),
+    soccer: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            <path d="M2 12h20" />
+        </svg>
+    ),
+};
+
+// Tool button component
+const ToolButton = ({ tool, activeTool, setActiveTool, icon, label }: {
+    tool: Tool;
+    activeTool: Tool;
+    setActiveTool: (tool: Tool) => void;
+    icon: React.ReactNode;
+    label: string;
+}) => (
+    <motion.button
+        onClick={() => setActiveTool(tool)}
+        className={`group relative flex flex-col items-center justify-center w-full py-3 rounded-xl transition-all duration-200
+            ${activeTool === tool
+                ? 'bg-gradient-to-br from-cyan-500/20 to-blue-600/20 text-cyan-400 shadow-lg shadow-cyan-500/10'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+    >
+        <div className={`transition-transform duration-200 ${activeTool === tool ? 'scale-110' : 'group-hover:scale-110'}`}>
+            {icon}
+        </div>
+        <span className="text-[10px] mt-1.5 font-medium tracking-wide">{label}</span>
+        {activeTool === tool && (
+            <motion.div
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-r-full"
+                layoutId="activeToolIndicator"
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            />
+        )}
+    </motion.button>
+);
+
+// Sidebar nav button
+const NavButton = ({ icon, active = false, badge }: { icon: React.ReactNode; active?: boolean; badge?: string }) => (
+    <motion.button
+        className={`relative p-3 rounded-xl transition-all duration-200
+            ${active ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+    >
+        {icon}
+        {badge && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 text-[10px] font-bold rounded-full flex items-center justify-center">
+                {badge}
+            </span>
+        )}
+    </motion.button>
+);
 
 export default function VideoAnalyzeStone() {
     const [videoFile, setVideoFile] = useState<string | null>(null);
@@ -64,11 +365,9 @@ export default function VideoAnalyzeStone() {
     const [isRecording, setIsRecording] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [resizingClip, setResizingClip] = useState<{ id: string; edge: 'start' | 'end' } | null>(null);
-    const [isDraggingTimeline, setIsDraggingTimeline] = useState(false);
     const [draggingClip, setDraggingClip] = useState<{ id: string; startX: number; originalStartTime: number } | null>(null);
     const [zoomLevel, setZoomLevel] = useState(1);
     const [timelineScroll, setTimelineScroll] = useState(0);
-    const [isTimelineHovered, setIsTimelineHovered] = useState(false);
     const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null);
@@ -76,15 +375,22 @@ export default function VideoAnalyzeStone() {
     const [textInput, setTextInput] = useState("");
     const [showTextInput, setShowTextInput] = useState(false);
     const [textInputPos, setTextInputPos] = useState({ x: 0, y: 0 });
+    const [filterText, setFilterText] = useState("");
+    const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [volume, setVolume] = useState(1);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
     const timelineRef = useRef<HTMLDivElement>(null);
     const scrollAnimationRef = useRef<any>(null);
     const stageRef = useRef<Konva.Stage>(null);
     const transformerRef = useRef<Konva.Transformer>(null);
     const videoContainerRef = useRef<HTMLDivElement>(null);
+
+    // Smooth spring values for playhead
+    const playheadX = useMotionValue(0);
+    const smoothPlayheadX = useSpring(playheadX, { stiffness: 300, damping: 30 });
 
     // Handle video upload
     const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,7 +405,7 @@ export default function VideoAnalyzeStone() {
     };
 
     // Play/Pause toggle
-    const togglePlayPause = () => {
+    const togglePlayPause = useCallback(() => {
         if (videoRef.current) {
             if (isPlaying) {
                 videoRef.current.pause();
@@ -108,14 +414,23 @@ export default function VideoAnalyzeStone() {
             }
             setIsPlaying(!isPlaying);
         }
-    };
+    }, [isPlaying]);
 
     // Update current time
     const handleTimeUpdate = () => {
-        if (videoRef.current) {
+        if (videoRef.current && !isDraggingPlayhead) {
             setCurrentTime(videoRef.current.currentTime);
         }
     };
+
+    // Update playhead position
+    useEffect(() => {
+        if (timelineRef.current && duration > 0) {
+            const visibleDuration = duration / zoomLevel;
+            const percentage = ((currentTime - timelineScroll) / visibleDuration) * 100;
+            playheadX.set(percentage);
+        }
+    }, [currentTime, timelineScroll, zoomLevel, duration, playheadX]);
 
     // Handle video loaded
     const handleLoadedMetadata = () => {
@@ -155,55 +470,66 @@ export default function VideoAnalyzeStone() {
     }, [videoFile]);
 
     // Seek to time
-    const seekTo = (time: number) => {
+    const seekTo = useCallback((time: number) => {
         if (videoRef.current) {
             videoRef.current.currentTime = time;
             setCurrentTime(time);
         }
-    };
+    }, []);
 
     // Skip forward/backward
-    const skip = (seconds: number) => {
+    const skip = useCallback((seconds: number) => {
         if (videoRef.current) {
             const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
             seekTo(newTime);
         }
-    };
+    }, [currentTime, duration, seekTo]);
 
     // Create new clip
-    const createClip = (type: string = "Shot on goal") => {
+    const createClip = useCallback((type: string = "Shot on goal") => {
         const newClip: Clip = {
             id: Date.now().toString(),
             name: type,
             startTime: currentTime,
-            endTime: currentTime + 25, // 25 seconds duration
-            duration: 25,
-            type: type
+            endTime: Math.min(currentTime + 25, duration),
+            duration: Math.min(25, duration - currentTime),
+            type: type,
+            description: ""
         };
-        setClips([...clips, newClip]);
+        setClips(prev => [...prev, newClip]);
         setSelectedClip(newClip.id);
-    };
+    }, [currentTime, duration]);
 
     // Delete clip
-    const deleteClip = (clipId: string) => {
-        setClips(clips.filter(c => c.id !== clipId));
+    const deleteClip = useCallback((clipId: string) => {
+        setClips(prev => prev.filter(c => c.id !== clipId));
         if (selectedClip === clipId) {
             setSelectedClip(null);
         }
-    };
+    }, [selectedClip]);
 
     // Jump to clip
-    const jumpToClip = (clip: Clip) => {
+    const jumpToClip = useCallback((clip: Clip) => {
         seekTo(clip.startTime);
         setSelectedClip(clip.id);
-    };
+    }, [seekTo]);
 
     // Format time display
     const formatTime = (seconds: number) => {
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hrs > 0) {
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    // Format duration for clips
+    const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
-        const ms = Math.floor((seconds % 1) * 100);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+        return `(${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')})`;
     };
 
     // Change playback speed
@@ -238,7 +564,6 @@ export default function VideoAnalyzeStone() {
             return;
         }
 
-        // For text tool, show input dialog
         if (activeTool === 'text') {
             const stage = e.target.getStage();
             const pos = stage.getPointerPosition();
@@ -247,7 +572,6 @@ export default function VideoAnalyzeStone() {
             return;
         }
 
-        // For other tools, start drawing
         if (!isDrawing) {
             const stage = e.target.getStage();
             const pos = stage.getPointerPosition();
@@ -263,7 +587,6 @@ export default function VideoAnalyzeStone() {
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
 
-        // Create annotation based on tool type
         const newAnnotation: Annotation = {
             id: `ann_${Date.now()}`,
             type: activeTool as any,
@@ -273,7 +596,7 @@ export default function VideoAnalyzeStone() {
             x: drawStart.x,
             y: drawStart.y,
             fill: activeTool === 'spotlight' ? 'rgba(255, 255, 0, 0.3)' : 'transparent',
-            stroke: '#3b82f6',
+            stroke: '#00d4ff',
             strokeWidth: 3,
             opacity: 1,
             rotation: 0,
@@ -281,7 +604,6 @@ export default function VideoAnalyzeStone() {
             scaleY: 1,
         };
 
-        // Set dimensions based on tool type
         switch (activeTool) {
             case 'circle':
                 const radius = Math.sqrt(Math.pow(pos.x - drawStart.x, 2) + Math.pow(pos.y - drawStart.y, 2));
@@ -305,7 +627,7 @@ export default function VideoAnalyzeStone() {
                 break;
         }
 
-        setAnnotations([...annotations, newAnnotation]);
+        setAnnotations(prev => [...prev, newAnnotation]);
         setIsDrawing(false);
         setDrawStart(null);
         setActiveTool('select');
@@ -326,13 +648,13 @@ export default function VideoAnalyzeStone() {
                 fontSize: 24,
                 fill: '#ffffff',
                 stroke: '#000000',
-                strokeWidth: 1,
+                strokeWidth: 0.5,
                 opacity: 1,
                 rotation: 0,
                 scaleX: 1,
                 scaleY: 1,
             };
-            setAnnotations([...annotations, newAnnotation]);
+            setAnnotations(prev => [...prev, newAnnotation]);
         }
         setTextInput("");
         setShowTextInput(false);
@@ -341,14 +663,14 @@ export default function VideoAnalyzeStone() {
 
     // Update annotation
     const updateAnnotation = (id: string, updates: Partial<Annotation>) => {
-        setAnnotations(annotations.map(ann =>
+        setAnnotations(prev => prev.map(ann =>
             ann.id === id ? { ...ann, ...updates } : ann
         ));
     };
 
     // Delete annotation
     const deleteAnnotation = (id: string) => {
-        setAnnotations(annotations.filter(ann => ann.id !== id));
+        setAnnotations(prev => prev.filter(ann => ann.id !== id));
         if (selectedAnnotationId === id) {
             setSelectedAnnotationId(null);
         }
@@ -359,16 +681,12 @@ export default function VideoAnalyzeStone() {
         return annotations.filter(ann => {
             return currentTime >= ann.startTime && currentTime <= ann.endTime;
         }).map(ann => {
-            // Calculate fade in/out opacity
-            const fadeDuration = 0.5; // 0.5 seconds fade
+            const fadeDuration = 0.3;
             let opacity = ann.opacity || 1;
 
-            // Fade in
             if (currentTime < ann.startTime + fadeDuration) {
                 opacity *= (currentTime - ann.startTime) / fadeDuration;
             }
-
-            // Fade out
             if (currentTime > ann.endTime - fadeDuration) {
                 opacity *= (ann.endTime - currentTime) / fadeDuration;
             }
@@ -377,13 +695,26 @@ export default function VideoAnalyzeStone() {
         });
     };
 
+    // Handle timeline click to seek
+    const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!timelineRef.current || resizingClip || draggingClip) return;
+
+        const rect = timelineRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const visibleDuration = duration / zoomLevel;
+        const percentage = Math.max(0, Math.min(1, x / rect.width));
+        const newTime = (percentage * visibleDuration) + timelineScroll;
+
+        seekTo(Math.max(0, Math.min(duration, newTime)));
+    };
+
     // Handle clip resize start
     const handleResizeStart = (clipId: string, edge: 'start' | 'end', e: React.MouseEvent) => {
         e.stopPropagation();
         setResizingClip({ id: clipId, edge });
     };
 
-    // Handle clip drag start (to move it)
+    // Handle clip drag start
     const handleClipDragStart = (clipId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         const clip = clips.find(c => c.id === clipId);
@@ -406,9 +737,8 @@ export default function VideoAnalyzeStone() {
         const percentage = Math.max(0, Math.min(1, x / rect.width));
         const newTime = (percentage * visibleDuration) + timelineScroll;
 
-        // Handle resizing
         if (resizingClip) {
-            setClips(clips.map(clip => {
+            setClips(prev => prev.map(clip => {
                 if (clip.id === resizingClip.id) {
                     if (resizingClip.edge === 'start') {
                         const newStartTime = Math.max(0, Math.min(newTime, clip.endTime - 1));
@@ -430,7 +760,6 @@ export default function VideoAnalyzeStone() {
             }));
         }
 
-        // Handle dragging clip to move it
         if (draggingClip) {
             const clip = clips.find(c => c.id === draggingClip.id);
             if (clip) {
@@ -439,33 +768,35 @@ export default function VideoAnalyzeStone() {
                 const newStartTime = Math.max(0, Math.min(duration - clip.duration, draggingClip.originalStartTime + deltaTime));
                 const newEndTime = newStartTime + clip.duration;
 
-                setClips(clips.map(c =>
+                setClips(prev => prev.map(c =>
                     c.id === draggingClip.id
                         ? { ...c, startTime: newStartTime, endTime: newEndTime }
                         : c
                 ));
             }
         }
+
+        if (isDraggingPlayhead) {
+            const newTime = Math.max(0, Math.min(duration, (percentage * visibleDuration) + timelineScroll));
+            seekTo(newTime);
+        }
     };
 
-    // Handle mouse up to stop resizing or dragging
+    // Handle mouse up
     const handleMouseUp = () => {
         setResizingClip(null);
         setDraggingClip(null);
-        setIsDraggingTimeline(false);
+        setIsDraggingPlayhead(false);
     };
 
-    // Smooth zoom with animation
+    // Smooth zoom
     const handleZoom = (direction: 'in' | 'out', centerTime?: number) => {
         setZoomLevel(prev => {
             const newZoom = direction === 'in' ? Math.min(prev * 1.5, 10) : Math.max(prev / 1.5, 1);
 
-            // Animate zoom smoothly
             if (newZoom === 1) {
-                // Reset scroll smoothly
                 animateScroll(0);
             } else if (centerTime !== undefined && prev !== newZoom) {
-                // Keep the center time in view when zooming
                 const visibleDuration = duration / newZoom;
                 const newScroll = Math.max(0, Math.min(duration - visibleDuration, centerTime - visibleDuration / 2));
                 animateScroll(newScroll);
@@ -488,23 +819,11 @@ export default function VideoAnalyzeStone() {
         });
     };
 
-    // Handle timeline scroll when zoomed (smooth)
-    const handleTimelineScroll = (direction: 'left' | 'right') => {
-        const visibleDuration = duration / zoomLevel;
-        const scrollAmount = visibleDuration * 0.15; // Scroll 15% at a time
-        const newScroll = direction === 'right'
-            ? Math.min(duration - visibleDuration, timelineScroll + scrollAmount)
-            : Math.max(0, timelineScroll - scrollAmount);
-
-        animateScroll(newScroll);
-    };
-
-    // Enhanced wheel handling with smooth scrolling
+    // Handle wheel
     const handleWheel = (e: React.WheelEvent) => {
         e.preventDefault();
 
         if (e.ctrlKey || e.metaKey) {
-            // Zoom with Ctrl/Cmd + wheel
             const rect = timelineRef.current?.getBoundingClientRect();
             if (rect) {
                 const x = e.clientX - rect.left;
@@ -519,15 +838,9 @@ export default function VideoAnalyzeStone() {
                 }
             }
         } else if (zoomLevel > 1) {
-            // Smooth horizontal scroll when zoomed
             const visibleDuration = duration / zoomLevel;
-            const scrollAmount = (e.deltaY / 1000) * visibleDuration; // Proportional scrolling
+            const scrollAmount = (e.deltaY / 500) * visibleDuration;
             const newScroll = Math.max(0, Math.min(duration - visibleDuration, timelineScroll + scrollAmount));
-
-            // Smooth scroll
-            if (scrollAnimationRef.current) {
-                scrollAnimationRef.current.stop();
-            }
             setTimelineScroll(newScroll);
         }
     };
@@ -537,50 +850,34 @@ export default function VideoAnalyzeStone() {
         const handleKeyPress = (e: KeyboardEvent) => {
             if (!videoFile) return;
 
-            // Don't handle shortcuts when typing in input
             if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
                 return;
             }
 
-            // Space - play/pause
             if (e.code === 'Space') {
                 e.preventDefault();
                 togglePlayPause();
-            }
-            // Arrow Left - skip back
-            else if (e.code === 'ArrowLeft') {
+            } else if (e.code === 'ArrowLeft') {
                 e.preventDefault();
-                skip(e.shiftKey ? -1 : -5);
-            }
-            // Arrow Right - skip forward
-            else if (e.code === 'ArrowRight') {
+                skip(e.shiftKey ? -1 : -10);
+            } else if (e.code === 'ArrowRight') {
                 e.preventDefault();
-                skip(e.shiftKey ? 1 : 5);
-            }
-            // Plus/Minus - zoom
-            else if ((e.code === 'Equal' || e.code === 'NumpadAdd') && (e.ctrlKey || e.metaKey)) {
+                skip(e.shiftKey ? 1 : 10);
+            } else if ((e.code === 'Equal' || e.code === 'NumpadAdd') && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 handleZoom('in', currentTime);
-            }
-            else if ((e.code === 'Minus' || e.code === 'NumpadSubtract') && (e.ctrlKey || e.metaKey)) {
+            } else if ((e.code === 'Minus' || e.code === 'NumpadSubtract') && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 handleZoom('out', currentTime);
-            }
-            // M - add clip marker
-            else if (e.code === 'KeyM') {
+            } else if (e.code === 'KeyM') {
                 e.preventDefault();
                 createClip();
-            }
-            // Delete - delete selected annotation
-            else if (e.code === 'Delete' || e.code === 'Backspace') {
+            } else if (e.code === 'Delete' || e.code === 'Backspace') {
                 if (selectedAnnotationId) {
                     e.preventDefault();
                     deleteAnnotation(selectedAnnotationId);
-                    setSelectedAnnotationId(null);
                 }
-            }
-            // Escape - cancel drawing/selection
-            else if (e.code === 'Escape') {
+            } else if (e.code === 'Escape') {
                 e.preventDefault();
                 setActiveTool('select');
                 setSelectedAnnotationId(null);
@@ -588,169 +885,114 @@ export default function VideoAnalyzeStone() {
                 setTextInput("");
                 transformerRef.current?.nodes([]);
             }
-            // Number keys 1-8 for quick tool selection
-            else if (e.code === 'Digit1') {
-                setActiveTool('select');
-            }
-            else if (e.code === 'Digit2') {
-                setActiveTool('text');
-            }
-            else if (e.code === 'Digit3') {
-                setActiveTool('circle');
-            }
-            else if (e.code === 'Digit4') {
-                setActiveTool('spotlight');
-            }
-            else if (e.code === 'Digit5') {
-                setActiveTool('line');
-            }
-            else if (e.code === 'Digit6') {
-                setActiveTool('arrow');
-            }
-            else if (e.code === 'Digit7') {
-                setActiveTool('connection');
-            }
-            else if (e.code === 'Digit8') {
-                setActiveTool('polygon');
-            }
         };
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, annotations]);
+    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, togglePlayPause, skip, createClip, deleteAnnotation]);
 
-    // Update clip times
+    // Update clip
     const updateClip = (clipId: string, updates: Partial<Clip>) => {
-        setClips(clips.map(clip =>
+        setClips(prev => prev.map(clip =>
             clip.id === clipId ? { ...clip, ...updates } : clip
         ));
     };
 
+    // Filter clips
+    const filteredClips = clips.filter(clip =>
+        clip.name.toLowerCase().includes(filterText.toLowerCase()) ||
+        clip.description?.toLowerCase().includes(filterText.toLowerCase())
+    );
+
     return (
-        <div className="flex h-screen bg-gray-900 text-white">
-            {/* Left Sidebar - Tools */}
+        <div className="flex h-screen bg-[#0a0a0f] text-white overflow-hidden font-['Inter',system-ui,sans-serif]">
+            {/* Left Sidebar - Navigation */}
             <motion.div
-                className="w-20 bg-gray-800 flex flex-col items-center py-4 space-y-6"
-                initial={{ x: -80, opacity: 0 }}
+                className="w-14 bg-[#0f0f15] border-r border-white/5 flex flex-col items-center py-4"
+                initial={{ x: -60, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
+                {/* Logo */}
                 <motion.div
-                    className="w-12 h-12 bg-white rounded-full flex items-center justify-center"
-                    whileHover={{ scale: 1.1, rotate: 360 }}
-                    transition={{ duration: 0.5 }}
+                    className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-cyan-500/20"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
                 >
-                    <span className="text-gray-900 font-bold text-xl">⚽</span>
+                    {Icons.soccer}
                 </motion.div>
 
-                <motion.button
-                    onClick={() => setActiveTool('select')}
-                    className={`tool-btn ${activeTool === 'select' ? 'bg-gray-700' : ''}`}
-                    title="Select"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">↖️</span>
-                </motion.button>
+                {/* Nav icons */}
+                <div className="flex flex-col items-center space-y-1 flex-1">
+                    <NavButton icon={Icons.home} active />
+                    <NavButton icon={Icons.folder} />
+                    <NavButton icon={Icons.calendar} />
+                    <NavButton icon={Icons.clipboard} />
+                    <NavButton icon={Icons.users} />
+                    <NavButton icon={Icons.share} />
+                    <NavButton icon={Icons.timer} />
+                    <NavButton icon={Icons.tag} badge="3" />
+                    <NavButton icon={Icons.grid} />
+                </div>
 
-                <motion.button
-                    onClick={() => setActiveTool('text')}
-                    className={`tool-btn ${activeTool === 'text' ? 'bg-gray-700' : ''}`}
-                    title="Text"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">T</span>
-                </motion.button>
+                {/* Bottom nav */}
+                <div className="flex flex-col items-center space-y-1 mt-auto">
+                    <NavButton icon={Icons.settings} />
+                    <NavButton icon={Icons.help} />
+                    <NavButton icon={Icons.monitor} />
+                    <NavButton icon={Icons.layers} />
+                </div>
+            </motion.div>
 
-                <motion.button
-                    onClick={() => setActiveTool('circle')}
-                    className={`tool-btn ${activeTool === 'circle' ? 'bg-gray-700' : ''}`}
-                    title="Circle"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">⭕</span>
-                </motion.button>
-
-                <motion.button
-                    onClick={() => setActiveTool('spotlight')}
-                    className={`tool-btn ${activeTool === 'spotlight' ? 'bg-gray-700' : ''}`}
-                    title="Spotlight"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">🔦</span>
-                </motion.button>
-
-                <motion.button
-                    onClick={() => setActiveTool('line')}
-                    className={`tool-btn ${activeTool === 'line' ? 'bg-gray-700' : ''}`}
-                    title="Line"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">📏</span>
-                </motion.button>
-
-                <motion.button
-                    onClick={() => setActiveTool('arrow')}
-                    className={`tool-btn ${activeTool === 'arrow' ? 'bg-gray-700' : ''}`}
-                    title="Arrow"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">➡️</span>
-                </motion.button>
-
-                <motion.button
-                    onClick={() => setActiveTool('connection')}
-                    className={`tool-btn ${activeTool === 'connection' ? 'bg-gray-700' : ''}`}
-                    title="Connection"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">🔗</span>
-                </motion.button>
-
-                <motion.button
-                    onClick={() => setActiveTool('polygon')}
-                    className={`tool-btn ${activeTool === 'polygon' ? 'bg-gray-700' : ''}`}
-                    title="Polygon"
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.9 }}
-                >
-                    <span className="text-2xl">⬡</span>
-                </motion.button>
+            {/* Tools Sidebar */}
+            <motion.div
+                className="w-20 bg-[#12121a] border-r border-white/5 flex flex-col py-4 px-2"
+                initial={{ x: -80, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            >
+                <div className="space-y-1">
+                    <ToolButton tool="select" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.cursor} label="Select" />
+                    <ToolButton tool="text" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.text} label="Text" />
+                    <ToolButton tool="circle" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.circle} label="Circle" />
+                    <ToolButton tool="spotlight" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.spotlight} label="Spotlight" />
+                    <ToolButton tool="line" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.line} label="Line" />
+                    <ToolButton tool="connection" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.connection} label="Connection" />
+                    <ToolButton tool="arrow" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.arrow} label="Arrow" />
+                    <ToolButton tool="polygon" activeTool={activeTool} setActiveTool={setActiveTool} icon={Icons.polygon} label="Polygon" />
+                </div>
             </motion.div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
                 <motion.div
-                    className="h-16 bg-gray-800 flex items-center justify-between px-6"
-                    initial={{ y: -64, opacity: 0 }}
+                    className="h-14 bg-[#12121a] border-b border-white/5 flex items-center justify-between px-6"
+                    initial={{ y: -56, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 >
-                    <h1 className="text-xl font-bold">فريسان_وحدات_2</h1>
+                    <h1 className="text-lg font-semibold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent" dir="rtl">
+                        فرسان_وحدات2
+                    </h1>
                     <motion.button
-                        className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-all"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                     >
                         Exit analytics
+                        {Icons.x}
                     </motion.button>
                 </motion.div>
 
                 {/* Video Display Area */}
-                <div className="flex-1 flex items-center justify-center bg-black relative">
+                <div className="flex-1 flex items-center justify-center bg-[#0a0a0f] relative overflow-hidden">
                     {!videoFile ? (
                         <motion.div
                             className="text-center"
-                            initial={{ scale: 0.8, opacity: 0 }}
+                            initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.4 }}
+                            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                         >
                             <input
                                 ref={fileInputRef}
@@ -761,16 +1003,22 @@ export default function VideoAnalyzeStone() {
                             />
                             <motion.button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-semibold shadow-lg"
-                                whileHover={{ scale: 1.1, boxShadow: '0 20px 50px rgba(59, 130, 246, 0.5)' }}
-                                whileTap={{ scale: 0.95 }}
+                                className="group relative px-10 py-5 bg-gradient-to-br from-cyan-500/10 to-blue-600/10 hover:from-cyan-500/20 hover:to-blue-600/20 border border-cyan-500/30 hover:border-cyan-400/50 rounded-2xl transition-all duration-300"
+                                whileHover={{ scale: 1.05, y: -2 }}
+                                whileTap={{ scale: 0.98 }}
                             >
-                                📹 Upload Video
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="p-4 bg-gradient-to-br from-cyan-500/20 to-blue-600/20 rounded-xl group-hover:scale-110 transition-transform">
+                                        {Icons.upload}
+                                    </div>
+                                    <span className="text-lg font-semibold">Upload Video</span>
+                                </div>
+                                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </motion.button>
                             <motion.p
-                                className="mt-4 text-gray-400"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
+                                className="mt-6 text-gray-500 text-sm"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
                             >
                                 Upload your football match video to start editing
@@ -781,13 +1029,18 @@ export default function VideoAnalyzeStone() {
                             <video
                                 ref={videoRef}
                                 src={videoFile}
-                                className="max-w-full max-h-full"
+                                className="max-w-full max-h-full rounded-lg shadow-2xl"
                                 onTimeUpdate={handleTimeUpdate}
                                 onLoadedMetadata={handleLoadedMetadata}
                                 onEnded={() => setIsPlaying(false)}
+                                muted={isMuted}
                             />
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                                style={{ width: canvasDimensions.width, height: canvasDimensions.height }}>
+
+                            {/* Canvas overlay */}
+                            <div
+                                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                                style={{ width: canvasDimensions.width, height: canvasDimensions.height }}
+                            >
                                 <Stage
                                     ref={stageRef}
                                     width={canvasDimensions.width}
@@ -801,231 +1054,96 @@ export default function VideoAnalyzeStone() {
                                 >
                                     <Layer>
                                         {getVisibleAnnotations().map((ann) => {
+                                            const commonProps = {
+                                                key: ann.id,
+                                                id: ann.id,
+                                                x: ann.x,
+                                                y: ann.y,
+                                                opacity: ann.opacity,
+                                                rotation: ann.rotation,
+                                                scaleX: ann.scaleX,
+                                                scaleY: ann.scaleY,
+                                                draggable: activeTool === 'select',
+                                                onClick: () => handleAnnotationSelect(ann.id),
+                                                onTap: () => handleAnnotationSelect(ann.id),
+                                                onDragEnd: (e: any) => {
+                                                    updateAnnotation(ann.id, {
+                                                        x: e.target.x(),
+                                                        y: e.target.y()
+                                                    });
+                                                },
+                                                onTransformEnd: (e: any) => {
+                                                    const node = e.target;
+                                                    updateAnnotation(ann.id, {
+                                                        x: node.x(),
+                                                        y: node.y(),
+                                                        rotation: node.rotation(),
+                                                        scaleX: node.scaleX(),
+                                                        scaleY: node.scaleY()
+                                                    });
+                                                }
+                                            };
+
                                             switch (ann.type) {
                                                 case 'circle':
-                                                    return (
-                                                        <Circle
-                                                            key={ann.id}
-                                                            id={ann.id}
-                                                            x={ann.x}
-                                                            y={ann.y}
-                                                            radius={ann.radius}
-                                                            fill={ann.fill}
-                                                            stroke={ann.stroke}
-                                                            strokeWidth={ann.strokeWidth}
-                                                            opacity={ann.opacity}
-                                                            rotation={ann.rotation}
-                                                            scaleX={ann.scaleX}
-                                                            scaleY={ann.scaleY}
-                                                            draggable={activeTool === 'select'}
-                                                            onClick={() => handleAnnotationSelect(ann.id)}
-                                                            onTap={() => handleAnnotationSelect(ann.id)}
-                                                            onDragEnd={(e) => {
-                                                                updateAnnotation(ann.id, {
-                                                                    x: e.target.x(),
-                                                                    y: e.target.y()
-                                                                });
-                                                            }}
-                                                            onTransformEnd={(e) => {
-                                                                const node = e.target;
-                                                                updateAnnotation(ann.id, {
-                                                                    x: node.x(),
-                                                                    y: node.y(),
-                                                                    rotation: node.rotation(),
-                                                                    scaleX: node.scaleX(),
-                                                                    scaleY: node.scaleY()
-                                                                });
-                                                            }}
-                                                        />
-                                                    );
                                                 case 'spotlight':
                                                     return (
                                                         <Circle
-                                                            key={ann.id}
-                                                            id={ann.id}
-                                                            x={ann.x}
-                                                            y={ann.y}
+                                                            {...commonProps}
                                                             radius={ann.radius}
                                                             fill={ann.fill}
                                                             stroke={ann.stroke}
                                                             strokeWidth={ann.strokeWidth}
-                                                            opacity={ann.opacity}
-                                                            rotation={ann.rotation}
-                                                            scaleX={ann.scaleX}
-                                                            scaleY={ann.scaleY}
-                                                            draggable={activeTool === 'select'}
-                                                            onClick={() => handleAnnotationSelect(ann.id)}
-                                                            onTap={() => handleAnnotationSelect(ann.id)}
-                                                            shadowColor="yellow"
-                                                            shadowBlur={30}
-                                                            shadowOpacity={0.8}
-                                                            onDragEnd={(e) => {
-                                                                updateAnnotation(ann.id, {
-                                                                    x: e.target.x(),
-                                                                    y: e.target.y()
-                                                                });
-                                                            }}
-                                                            onTransformEnd={(e) => {
-                                                                const node = e.target;
-                                                                updateAnnotation(ann.id, {
-                                                                    x: node.x(),
-                                                                    y: node.y(),
-                                                                    rotation: node.rotation(),
-                                                                    scaleX: node.scaleX(),
-                                                                    scaleY: node.scaleY()
-                                                                });
-                                                            }}
+                                                            shadowColor={ann.type === 'spotlight' ? '#ffd700' : undefined}
+                                                            shadowBlur={ann.type === 'spotlight' ? 30 : 0}
+                                                            shadowOpacity={ann.type === 'spotlight' ? 0.8 : 0}
                                                         />
                                                     );
                                                 case 'line':
                                                     return (
                                                         <Line
-                                                            key={ann.id}
-                                                            id={ann.id}
-                                                            x={ann.x}
-                                                            y={ann.y}
+                                                            {...commonProps}
                                                             points={ann.points}
                                                             stroke={ann.stroke}
                                                             strokeWidth={ann.strokeWidth}
-                                                            opacity={ann.opacity}
-                                                            rotation={ann.rotation}
-                                                            scaleX={ann.scaleX}
-                                                            scaleY={ann.scaleY}
-                                                            draggable={activeTool === 'select'}
-                                                            onClick={() => handleAnnotationSelect(ann.id)}
-                                                            onTap={() => handleAnnotationSelect(ann.id)}
                                                             lineCap="round"
                                                             lineJoin="round"
-                                                            onDragEnd={(e) => {
-                                                                updateAnnotation(ann.id, {
-                                                                    x: e.target.x(),
-                                                                    y: e.target.y()
-                                                                });
-                                                            }}
-                                                            onTransformEnd={(e) => {
-                                                                const node = e.target;
-                                                                updateAnnotation(ann.id, {
-                                                                    x: node.x(),
-                                                                    y: node.y(),
-                                                                    rotation: node.rotation(),
-                                                                    scaleX: node.scaleX(),
-                                                                    scaleY: node.scaleY()
-                                                                });
-                                                            }}
                                                         />
                                                     );
                                                 case 'arrow':
                                                     return (
                                                         <Arrow
-                                                            key={ann.id}
-                                                            id={ann.id}
-                                                            x={ann.x}
-                                                            y={ann.y}
+                                                            {...commonProps}
                                                             points={ann.points || [0, 0, 100, 100]}
                                                             stroke={ann.stroke}
                                                             strokeWidth={ann.strokeWidth}
                                                             fill={ann.stroke}
-                                                            opacity={ann.opacity}
-                                                            rotation={ann.rotation}
-                                                            scaleX={ann.scaleX}
-                                                            scaleY={ann.scaleY}
-                                                            draggable={activeTool === 'select'}
-                                                            onClick={() => handleAnnotationSelect(ann.id)}
-                                                            onTap={() => handleAnnotationSelect(ann.id)}
-                                                            pointerLength={10}
-                                                            pointerWidth={10}
-                                                            onDragEnd={(e) => {
-                                                                updateAnnotation(ann.id, {
-                                                                    x: e.target.x(),
-                                                                    y: e.target.y()
-                                                                });
-                                                            }}
-                                                            onTransformEnd={(e) => {
-                                                                const node = e.target;
-                                                                updateAnnotation(ann.id, {
-                                                                    x: node.x(),
-                                                                    y: node.y(),
-                                                                    rotation: node.rotation(),
-                                                                    scaleX: node.scaleX(),
-                                                                    scaleY: node.scaleY()
-                                                                });
-                                                            }}
+                                                            pointerLength={12}
+                                                            pointerWidth={12}
                                                         />
                                                     );
                                                 case 'polygon':
                                                     return (
                                                         <RegularPolygon
-                                                            key={ann.id}
-                                                            id={ann.id}
-                                                            x={ann.x}
-                                                            y={ann.y}
+                                                            {...commonProps}
                                                             sides={6}
                                                             radius={ann.radius || 50}
                                                             fill={ann.fill}
                                                             stroke={ann.stroke}
                                                             strokeWidth={ann.strokeWidth}
-                                                            opacity={ann.opacity}
-                                                            rotation={ann.rotation}
-                                                            scaleX={ann.scaleX}
-                                                            scaleY={ann.scaleY}
-                                                            draggable={activeTool === 'select'}
-                                                            onClick={() => handleAnnotationSelect(ann.id)}
-                                                            onTap={() => handleAnnotationSelect(ann.id)}
-                                                            onDragEnd={(e) => {
-                                                                updateAnnotation(ann.id, {
-                                                                    x: e.target.x(),
-                                                                    y: e.target.y()
-                                                                });
-                                                            }}
-                                                            onTransformEnd={(e) => {
-                                                                const node = e.target;
-                                                                updateAnnotation(ann.id, {
-                                                                    x: node.x(),
-                                                                    y: node.y(),
-                                                                    rotation: node.rotation(),
-                                                                    scaleX: node.scaleX(),
-                                                                    scaleY: node.scaleY()
-                                                                });
-                                                            }}
                                                         />
                                                     );
                                                 case 'text':
                                                     return (
                                                         <Text
-                                                            key={ann.id}
-                                                            id={ann.id}
-                                                            x={ann.x}
-                                                            y={ann.y}
+                                                            {...commonProps}
                                                             text={ann.text}
                                                             fontSize={ann.fontSize}
                                                             fill={ann.fill}
                                                             stroke={ann.stroke}
                                                             strokeWidth={ann.strokeWidth}
-                                                            opacity={ann.opacity}
-                                                            rotation={ann.rotation}
-                                                            scaleX={ann.scaleX}
-                                                            scaleY={ann.scaleY}
-                                                            draggable={activeTool === 'select'}
-                                                            onClick={() => handleAnnotationSelect(ann.id)}
-                                                            onTap={() => handleAnnotationSelect(ann.id)}
-                                                            fontFamily="Arial"
+                                                            fontFamily="Inter, system-ui, sans-serif"
                                                             fontStyle="bold"
-                                                            onDragEnd={(e) => {
-                                                                updateAnnotation(ann.id, {
-                                                                    x: e.target.x(),
-                                                                    y: e.target.y()
-                                                                });
-                                                            }}
-                                                            onTransformEnd={(e) => {
-                                                                const node = e.target;
-                                                                updateAnnotation(ann.id, {
-                                                                    x: node.x(),
-                                                                    y: node.y(),
-                                                                    rotation: node.rotation(),
-                                                                    scaleX: node.scaleX(),
-                                                                    scaleY: node.scaleY()
-                                                                });
-                                                            }}
                                                         />
                                                     );
                                                 default:
@@ -1035,774 +1153,508 @@ export default function VideoAnalyzeStone() {
                                         <Transformer
                                             ref={transformerRef}
                                             boundBoxFunc={(oldBox, newBox) => {
-                                                // Limit resize
                                                 if (newBox.width < 5 || newBox.height < 5) {
                                                     return oldBox;
                                                 }
                                                 return newBox;
                                             }}
+                                            borderStroke="#00d4ff"
+                                            anchorStroke="#00d4ff"
+                                            anchorFill="#0a0a0f"
+                                            anchorSize={10}
+                                            anchorCornerRadius={2}
                                         />
                                     </Layer>
                                 </Stage>
                             </div>
 
                             {/* Text Input Dialog */}
-                            {showTextInput && (
-                                <motion.div
-                                    className="absolute bg-gray-800 p-4 rounded-lg shadow-xl border border-gray-600"
-                                    style={{
-                                        left: textInputPos.x,
-                                        top: textInputPos.y,
-                                        zIndex: 1000
-                                    }}
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                >
-                                    <input
-                                        type="text"
-                                        value={textInput}
-                                        onChange={(e) => setTextInput(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleTextSubmit();
-                                            if (e.key === 'Escape') {
-                                                setShowTextInput(false);
-                                                setTextInput("");
-                                                setActiveTool('select');
-                                            }
+                            <AnimatePresence>
+                                {showTextInput && (
+                                    <motion.div
+                                        className="absolute bg-[#1a1a24] p-4 rounded-xl shadow-2xl border border-white/10"
+                                        style={{
+                                            left: textInputPos.x,
+                                            top: textInputPos.y,
+                                            zIndex: 1000
                                         }}
-                                        placeholder="Enter text..."
-                                        className="px-3 py-2 bg-gray-700 rounded text-white w-64 mb-2"
-                                        autoFocus
-                                    />
-                                    <div className="flex space-x-2">
-                                        <button
-                                            onClick={handleTextSubmit}
-                                            className="px-4 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
-                                        >
-                                            Add
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setShowTextInput(false);
-                                                setTextInput("");
-                                                setActiveTool('select');
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0.9, opacity: 0 }}
+                                    >
+                                        <input
+                                            type="text"
+                                            value={textInput}
+                                            onChange={(e) => setTextInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleTextSubmit();
+                                                if (e.key === 'Escape') {
+                                                    setShowTextInput(false);
+                                                    setTextInput("");
+                                                    setActiveTool('select');
+                                                }
                                             }}
-                                            className="px-4 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            )}
+                                            placeholder="Enter text..."
+                                            className="px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white w-64 mb-3 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                                            autoFocus
+                                        />
+                                        <div className="flex gap-2">
+                                            <motion.button
+                                                onClick={handleTextSubmit}
+                                                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-lg text-sm font-medium transition-all"
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                Add
+                                            </motion.button>
+                                            <motion.button
+                                                onClick={() => {
+                                                    setShowTextInput(false);
+                                                    setTextInput("");
+                                                    setActiveTool('select');
+                                                }}
+                                                className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-all"
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                Cancel
+                                            </motion.button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     )}
                 </div>
 
-                {/* Video Controls */}
+                {/* Video Controls & Timeline */}
                 {videoFile && (
-                    <div className="bg-gray-800 p-4">
+                    <motion.div
+                        className="bg-[#12121a] border-t border-white/5"
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    >
                         {/* Playback Controls */}
-                        <div className="flex items-center justify-center space-x-4 mb-4">
-                            <motion.button
-                                onClick={() => skip(-10)}
-                                className="control-btn"
-                                title="Skip -10s (← Arrow)"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                            >
-                                <span className="text-xl">↶10</span>
-                            </motion.button>
+                        <div className="flex items-center justify-center gap-2 py-3 border-b border-white/5">
+                            {/* Left controls */}
+                            <div className="flex items-center gap-3 mr-auto pl-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg text-sm">
+                                    <span className="text-cyan-400 font-medium">{Icons.tag}</span>
+                                    <span className="text-gray-400">My clips</span>
+                                    {Icons.chevronDown}
+                                </div>
+                            </div>
 
-                            <motion.button
-                                onClick={togglePlayPause}
-                                className="control-btn-large"
-                                title="Play/Pause (Space)"
-                                whileHover={{ scale: 1.15 }}
-                                whileTap={{ scale: 0.95 }}
-                                animate={{ rotate: isPlaying ? 0 : [0, -10, 10, 0] }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                {isPlaying ? '⏸️' : '▶️'}
-                            </motion.button>
+                            {/* Center controls */}
+                            <div className="flex items-center gap-1">
+                                <motion.button
+                                    onClick={() => seekTo(0)}
+                                    className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                >
+                                    {Icons.skipBack}
+                                </motion.button>
 
-                            <motion.button
-                                onClick={() => skip(10)}
-                                className="control-btn"
-                                title="Skip +10s (→ Arrow)"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                            >
-                                <span className="text-xl">↷10</span>
-                            </motion.button>
+                                <motion.button
+                                    onClick={() => skip(-10)}
+                                    className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                >
+                                    {Icons.rewind}
+                                </motion.button>
 
-                            <motion.button
-                                onClick={() => setIsRecording(!isRecording)}
-                                className={`control-btn ${isRecording ? 'bg-red-600' : ''}`}
-                                title="Record Clip"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                animate={isRecording ? { scale: [1, 1.1, 1] } : {}}
-                                transition={isRecording ? { duration: 1, repeat: Infinity } : {}}
-                            >
-                                ⏺️
-                            </motion.button>
+                                <motion.button
+                                    onClick={togglePlayPause}
+                                    className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 rounded-full shadow-lg shadow-red-500/30 transition-all"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    {isPlaying ? Icons.pause : Icons.play}
+                                </motion.button>
 
-                            <motion.button
-                                onClick={changePlaybackSpeed}
-                                className="control-btn"
-                                title="Playback Speed"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                            >
-                                {playbackSpeed}x
-                            </motion.button>
+                                <motion.button
+                                    onClick={() => skip(10)}
+                                    className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                >
+                                    {Icons.fastForward}
+                                </motion.button>
+
+                                <motion.button
+                                    onClick={() => seekTo(duration)}
+                                    className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                >
+                                    {Icons.skipForward}
+                                </motion.button>
+                            </div>
+
+                            {/* Right controls */}
+                            <div className="flex items-center gap-2 ml-auto pr-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg">
+                                    <motion.button
+                                        onClick={() => handleZoom('out')}
+                                        className="text-gray-400 hover:text-white transition-colors disabled:opacity-30"
+                                        disabled={zoomLevel <= 1}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                    >
+                                        {Icons.zoomOut}
+                                    </motion.button>
+                                    <motion.button
+                                        onClick={() => handleZoom('in')}
+                                        className="text-gray-400 hover:text-white transition-colors disabled:opacity-30"
+                                        disabled={zoomLevel >= 10}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                    >
+                                        {Icons.zoomIn}
+                                    </motion.button>
+                                </div>
+
+                                <motion.button
+                                    onClick={() => setIsMuted(!isMuted)}
+                                    className="p-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                >
+                                    {Icons.volume}
+                                </motion.button>
+
+                                <motion.button
+                                    onClick={changePlaybackSpeed}
+                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-all"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    {playbackSpeed}×
+                                </motion.button>
+                            </div>
                         </div>
 
                         {/* Timeline */}
                         <div
-                            className="relative select-none"
+                            className="relative px-4 py-4 select-none"
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
                         >
-                            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-                                <div className="flex items-center space-x-4">
-                                    <span>{formatTime(currentTime)}</span>
-                                    <div className="flex items-center space-x-2 bg-gray-700 rounded px-3 py-1">
-                                        <button
-                                            onClick={() => handleZoom('out')}
-                                            className="hover:text-white transition-colors"
-                                            title="Zoom Out (Ctrl + Scroll)"
-                                            disabled={zoomLevel <= 1}
-                                        >
-                                            🔍−
-                                        </button>
-                                        <span className="text-xs">{zoomLevel.toFixed(1)}x</span>
-                                        <button
-                                            onClick={() => handleZoom('in')}
-                                            className="hover:text-white transition-colors"
-                                            title="Zoom In (Ctrl + Scroll)"
-                                            disabled={zoomLevel >= 10}
-                                        >
-                                            🔍+
-                                        </button>
-                                    </div>
-                                    {zoomLevel > 1 && (
-                                        <div className="flex items-center space-x-1">
-                                            <button
-                                                onClick={() => handleTimelineScroll('left')}
-                                                className="hover:text-white transition-colors px-2"
-                                                title="Scroll Left"
-                                            >
-                                                ◀
-                                            </button>
-                                            <button
-                                                onClick={() => handleTimelineScroll('right')}
-                                                className="hover:text-white transition-colors px-2"
-                                                title="Scroll Right"
-                                            >
-                                                ▶
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                                <span>{formatTime(duration)}</span>
+                            {/* Time display */}
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-lg text-sm font-mono z-30">
+                                <span className="text-white">{formatTime(currentTime)}</span>
+                                <span className="text-gray-500"> / {formatTime(duration)}</span>
                             </div>
 
-                            <motion.div
-                                ref={timelineRef}
-                                className="relative h-16 bg-gray-700 rounded overflow-hidden cursor-grab active:cursor-grabbing"
-                                onWheel={handleWheel}
-                                onMouseEnter={() => setIsTimelineHovered(true)}
-                                onMouseLeave={() => setIsTimelineHovered(false)}
-                                animate={{
-                                    scale: isTimelineHovered ? 1.01 : 1,
-                                }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                {/* Timeline bar */}
-                                <input
-                                    type="range"
-                                    min={timelineScroll}
-                                    max={timelineScroll + (duration / zoomLevel)}
-                                    step="0.1"
-                                    value={currentTime}
-                                    onChange={(e) => seekTo(parseFloat(e.target.value))}
-                                    className="absolute top-0 w-full h-2 appearance-none bg-transparent cursor-pointer z-10"
-                                    style={{
-                                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}%, #4b5563 ${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}%, #4b5563 100%)`
-                                    }}
-                                />
-
-                                {/* Clip markers on timeline */}
-                                {clips.map((clip) => {
-                                    const visibleDuration = duration / zoomLevel;
-                                    const visibleStart = timelineScroll;
-                                    const visibleEnd = timelineScroll + visibleDuration;
-
-                                    // Only show clips that are in the visible range
-                                    if (clip.endTime < visibleStart || clip.startTime > visibleEnd) {
-                                        return null;
-                                    }
-
-                                    const leftPercent = ((clip.startTime - timelineScroll) / visibleDuration) * 100;
-                                    const widthPercent = (clip.duration / visibleDuration) * 100;
-
-                                    return (
-                                        <motion.div
-                                            key={clip.id}
-                                            className={`absolute h-12 bg-blue-600 border-2 border-blue-400 rounded cursor-move ${selectedClip === clip.id ? 'bg-opacity-70 border-blue-300 shadow-lg' : 'bg-opacity-50 hover:bg-opacity-70'
-                                                }`}
-                                            style={{
-                                                left: `${Math.max(0, leftPercent)}%`,
-                                                width: `${widthPercent}%`,
-                                                top: '20px',
-                                                zIndex: selectedClip === clip.id ? 30 : 20
-                                            }}
-                                            initial={{ scale: 0.95, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            transition={{ duration: 0.2 }}
-                                            whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(59, 130, 246, 0.5)' }}
-                                            onMouseDown={(e) => {
-                                                const target = e.target as HTMLElement;
-                                                if (!target.classList.contains('cursor-ew-resize')) {
-                                                    handleClipDragStart(clip.id, e);
-                                                }
-                                            }}
-                                            title={`${clip.name} - ${formatTime(clip.startTime)} (drag to move)`}
-                                        >
-                                            {/* Left resize handle */}
-                                            <motion.div
-                                                className="absolute left-0 top-0 w-2 h-full bg-blue-300 cursor-ew-resize hover:bg-blue-200 z-30"
-                                                onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
-                                                title="Drag to adjust start time"
-                                                whileHover={{ width: '8px', backgroundColor: '#93c5fd' }}
-                                            />
-
-                                            <div className="text-xs text-center truncate px-3 py-1 flex items-center justify-center h-full pointer-events-none">
-                                                {clip.name}
-                                            </div>
-
-                                            {/* Right resize handle */}
-                                            <motion.div
-                                                className="absolute right-0 top-0 w-2 h-full bg-blue-300 cursor-ew-resize hover:bg-blue-200 z-30"
-                                                onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
-                                                title="Drag to adjust end time"
-                                                whileHover={{ width: '8px', backgroundColor: '#93c5fd' }}
-                                            />
-                                        </motion.div>
-                                    );
-                                })}
-
-                                {/* Current time indicator */}
-                                <motion.div
-                                    className="absolute w-0.5 h-16 bg-white pointer-events-none"
-                                    style={{
-                                        left: `${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}%`,
-                                        zIndex: 25,
-                                        display: currentTime >= timelineScroll && currentTime <= timelineScroll + (duration / zoomLevel) ? 'block' : 'none'
-                                    }}
-                                    initial={{ scaleY: 0.8 }}
-                                    animate={{ scaleY: [0.8, 1, 0.8] }}
-                                    transition={{ duration: 1.5, repeat: Infinity }}
-                                />
-                            </motion.div>
-
                             {/* Time markers */}
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <div className="flex justify-between text-[10px] text-gray-600 mb-2 px-1">
                                 {Array.from({ length: 11 }, (_, i) => {
                                     const visibleDuration = duration / zoomLevel;
                                     const time = timelineScroll + (visibleDuration / 10) * i;
-                                    return <span key={i}>{formatTime(time).split('.')[0]}</span>;
+                                    return <span key={i}>{formatTime(time)}</span>;
                                 })}
                             </div>
-                        </div>
 
-                        {/* Create Clip Button & Help */}
-                        <div className="space-y-3 mt-4">
-                            <div className="flex justify-between items-center">
-                                <motion.button
-                                    onClick={() => createClip()}
-                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    📌 Add Shot on Goal Clip (M)
-                                </motion.button>
-
-                                <div className="text-xs text-gray-400 flex items-center space-x-4">
-                                    <span title="Play/Pause">Space: Play/Pause</span>
-                                    <span title="Navigate">←→: Skip</span>
-                                    <span title="Zoom">Ctrl+Wheel: Zoom</span>
-                                    <span title="Scroll when zoomed">Wheel: Scroll</span>
+                            {/* Timeline track */}
+                            <motion.div
+                                ref={timelineRef}
+                                className="relative h-24 bg-[#1a1a24] rounded-xl overflow-hidden cursor-pointer"
+                                onWheel={handleWheel}
+                                onClick={handleTimelineClick}
+                            >
+                                {/* Progress bar background */}
+                                <div className="absolute inset-x-0 top-0 h-1.5 bg-white/5">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                                        style={{
+                                            width: `${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}%`
+                                        }}
+                                    />
                                 </div>
-                            </div>
 
-                            {/* Annotation Tools Info */}
-                            {selectedAnnotationId && (
-                                <motion.div
-                                    className="p-3 bg-gray-700 rounded-lg border border-blue-500"
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-xs text-gray-300">
-                                            <span className="font-semibold text-blue-400">Annotation Selected</span> - Drag to move • Handles to resize • Del to delete
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <button
-                                                onClick={() => {
-                                                    const ann = annotations.find(a => a.id === selectedAnnotationId);
-                                                    if (ann) {
-                                                        updateAnnotation(selectedAnnotationId, {
-                                                            stroke: ann.stroke === '#3b82f6' ? '#ef4444' : ann.stroke === '#ef4444' ? '#10b981' : '#3b82f6'
-                                                        });
+                                {/* Clip markers on timeline */}
+                                <AnimatePresence>
+                                    {clips.map((clip) => {
+                                        const visibleDuration = duration / zoomLevel;
+                                        const visibleStart = timelineScroll;
+                                        const visibleEnd = timelineScroll + visibleDuration;
+
+                                        if (clip.endTime < visibleStart || clip.startTime > visibleEnd) {
+                                            return null;
+                                        }
+
+                                        const leftPercent = ((clip.startTime - timelineScroll) / visibleDuration) * 100;
+                                        const widthPercent = (clip.duration / visibleDuration) * 100;
+
+                                        return (
+                                            <motion.div
+                                                key={clip.id}
+                                                className={`absolute rounded-lg cursor-move overflow-hidden backdrop-blur-sm
+                                                    ${selectedClip === clip.id
+                                                        ? 'bg-cyan-500/30 border-2 border-cyan-400 shadow-lg shadow-cyan-500/20'
+                                                        : 'bg-blue-500/20 border border-blue-400/50 hover:bg-blue-500/30'
+                                                    }`}
+                                                style={{
+                                                    left: `${Math.max(0, leftPercent)}%`,
+                                                    width: `${widthPercent}%`,
+                                                    top: '16px',
+                                                    height: 'calc(100% - 24px)',
+                                                    zIndex: selectedClip === clip.id ? 20 : 10
+                                                }}
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                exit={{ scale: 0.9, opacity: 0 }}
+                                                whileHover={{ y: -2 }}
+                                                onMouseDown={(e) => {
+                                                    const target = e.target as HTMLElement;
+                                                    if (!target.classList.contains('resize-handle')) {
+                                                        handleClipDragStart(clip.id, e);
                                                     }
                                                 }}
-                                                className="px-2 py-1 bg-gray-600 hover:bg-gray-500 rounded text-xs"
-                                                title="Change Color"
                                             >
-                                                🎨
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    deleteAnnotation(selectedAnnotationId);
-                                                    setSelectedAnnotationId(null);
-                                                }}
-                                                className="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-xs"
-                                                title="Delete"
-                                            >
-                                                🗑️
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
+                                                {/* Left resize handle */}
+                                                <div
+                                                    className="resize-handle absolute left-0 top-0 w-2 h-full bg-gradient-to-r from-white/30 to-transparent cursor-ew-resize hover:from-white/50 transition-colors"
+                                                    onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
+                                                />
 
-                            {/* Drawing Mode Info */}
-                            {activeTool !== 'select' && (
+                                                <div className="flex items-center h-full px-3 pointer-events-none">
+                                                    <span className="text-xs font-medium truncate text-white/80">{clip.name}</span>
+                                                </div>
+
+                                                {/* Resize icon in corner */}
+                                                <div className="absolute bottom-1 right-1 text-white/30">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M22 22H20V20H22V22ZM22 18H20V16H22V18ZM18 22H16V20H18V22ZM18 18H16V16H18V18ZM14 22H12V20H14V22ZM22 14H20V12H22V14Z" />
+                                                    </svg>
+                                                </div>
+
+                                                {/* Right resize handle */}
+                                                <div
+                                                    className="resize-handle absolute right-0 top-0 w-2 h-full bg-gradient-to-l from-white/30 to-transparent cursor-ew-resize hover:from-white/50 transition-colors"
+                                                    onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
+                                                />
+                                            </motion.div>
+                                        );
+                                    })}
+                                </AnimatePresence>
+
+                                {/* Playhead */}
                                 <motion.div
-                                    className="p-3 bg-green-900/30 rounded-lg border border-green-500"
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
+                                    className="absolute top-0 bottom-0 w-0.5 bg-white z-30 cursor-ew-resize"
+                                    style={{
+                                        left: `${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}%`,
+                                        display: currentTime >= timelineScroll && currentTime <= timelineScroll + (duration / zoomLevel) ? 'block' : 'none'
+                                    }}
+                                    onMouseDown={() => setIsDraggingPlayhead(true)}
                                 >
-                                    <div className="text-xs text-green-300">
-                                        <span className="font-semibold">Drawing Mode: {activeTool.toUpperCase()}</span> -
-                                        {activeTool === 'text' ? ' Click to place text' : ' Click and drag to draw'}
-                                        {' • ESC to cancel'}
-                                    </div>
+                                    {/* Playhead handle */}
+                                    <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-sm rotate-45 shadow-lg" />
                                 </motion.div>
-                            )}
+                            </motion.div>
                         </div>
-                    </div>
+                    </motion.div>
                 )}
             </div>
 
             {/* Right Sidebar - Clips List */}
-            {videoFile && (
-                <div className="w-80 bg-gray-800 flex flex-col">
-                    {/* Clips Header */}
-                    <div className="p-4 border-b border-gray-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <input
-                                type="text"
-                                placeholder="Filter clips..."
-                                className="flex-1 px-3 py-2 bg-gray-700 rounded text-sm"
-                            />
-                            <button className="ml-2 p-2 hover:bg-gray-700 rounded">
-                                🔍
-                            </button>
-                        </div>
-
-                        <button className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm">
-                            Select clips...
-                        </button>
-
-                        <div className="mt-4">
-                            <select className="w-full px-3 py-2 bg-gray-700 rounded text-sm">
-                                <option>My clips</option>
-                                <option>All clips</option>
-                                <option>Team clips</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Clips List */}
-                    <div className="flex-1 overflow-y-auto">
-                        {clips.length === 0 ? (
-                            <div className="p-8 text-center text-gray-400">
-                                <p className="mb-2">No clips yet</p>
-                                <p className="text-sm">Create your first clip by clicking the button below the timeline</p>
+            <AnimatePresence>
+                {videoFile && (
+                    <motion.div
+                        className="w-80 bg-[#12121a] border-l border-white/5 flex flex-col"
+                        initial={{ x: 320, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: 320, opacity: 0 }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                        {/* Clips Header */}
+                        <div className="p-4 border-b border-white/5 space-y-3">
+                            {/* Search */}
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                    {Icons.search}
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Filter clips..."
+                                    value={filterText}
+                                    onChange={(e) => setFilterText(e.target.value)}
+                                    className="w-full pl-10 pr-10 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                                />
+                                <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                                    {Icons.filter}
+                                </button>
                             </div>
-                        ) : (
-                            <div className="p-2 space-y-2">
-                                {clips.map((clip, index) => (
-                                    <motion.div
-                                        key={clip.id}
-                                        className={`p-3 rounded ${selectedClip === clip.id
-                                            ? 'bg-blue-600'
-                                            : 'bg-gray-700 hover:bg-gray-600'
-                                            }`}
-                                        initial={{ x: -20, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        whileHover={{ scale: 1.02 }}
-                                    >
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1" onClick={() => jumpToClip(clip)}>
-                                                <div className="flex items-center space-x-2 mb-2 cursor-pointer">
-                                                    <span className="text-sm">⚽</span>
+
+                            {/* Select clips button */}
+                            <motion.button
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-all"
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                            >
+                                {Icons.check}
+                                Select clips...
+                            </motion.button>
+
+                            {/* Clips dropdown */}
+                            <div className="flex items-center gap-2 px-3 py-2.5 bg-white/5 rounded-lg">
+                                <span className="text-cyan-400">{Icons.tag}</span>
+                                <span className="flex-1 text-sm font-medium">My clips</span>
+                                {Icons.chevronDown}
+                            </div>
+                        </div>
+
+                        {/* Clips List */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            {filteredClips.length === 0 ? (
+                                <div className="p-8 text-center">
+                                    <div className="w-16 h-16 mx-auto mb-4 bg-white/5 rounded-full flex items-center justify-center text-gray-600">
+                                        {Icons.tag}
+                                    </div>
+                                    <p className="text-gray-500 text-sm mb-1">No clips yet</p>
+                                    <p className="text-gray-600 text-xs">Press M or click the record button to create your first clip</p>
+                                </div>
+                            ) : (
+                                <div className="p-2 space-y-2">
+                                    {filteredClips.map((clip, index) => (
+                                        <motion.div
+                                            key={clip.id}
+                                            className={`group relative p-3 rounded-xl transition-all duration-200 cursor-pointer
+                                                ${selectedClip === clip.id
+                                                    ? 'bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-cyan-500/30'
+                                                    : 'bg-white/5 hover:bg-white/10 border border-transparent'
+                                                }`}
+                                            initial={{ x: 20, opacity: 0 }}
+                                            animate={{ x: 0, opacity: 1 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            onClick={() => jumpToClip(clip)}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className={`mt-0.5 ${selectedClip === clip.id ? 'text-cyan-400' : 'text-gray-500'}`}>
+                                                    {Icons.soccer}
+                                                </div>
+
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <input
+                                                            type="text"
+                                                            value={clip.name}
+                                                            onChange={(e) => {
+                                                                e.stopPropagation();
+                                                                updateClip(clip.id, { name: e.target.value });
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className={`font-medium bg-transparent border-none outline-none flex-1 truncate hover:bg-white/5 px-1 py-0.5 -mx-1 rounded transition-colors
+                                                                ${selectedClip === clip.id ? 'text-cyan-400' : 'text-white'}`}
+                                                        />
+                                                        <motion.button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteClip(clip.id);
+                                                            }}
+                                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded transition-all"
+                                                            whileHover={{ scale: 1.1 }}
+                                                            whileTap={{ scale: 0.9 }}
+                                                        >
+                                                            {Icons.moreHorizontal}
+                                                        </motion.button>
+                                                    </div>
+
+                                                    <div className="text-xs text-gray-500">
+                                                        {formatTime(clip.startTime)} - {formatTime(clip.endTime)} {formatDuration(clip.duration)}
+                                                    </div>
+
                                                     <input
                                                         type="text"
-                                                        value={clip.name}
+                                                        value={clip.description || ''}
                                                         onChange={(e) => {
                                                             e.stopPropagation();
-                                                            updateClip(clip.id, { name: e.target.value });
+                                                            updateClip(clip.id, { description: e.target.value });
                                                         }}
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="font-semibold bg-transparent border-none outline-none flex-1 hover:bg-gray-600 px-1 rounded transition-colors"
+                                                        placeholder="Add description..."
+                                                        className="mt-2 w-full text-xs bg-white/5 border border-transparent hover:border-white/10 focus:border-cyan-500/30 rounded px-2 py-1.5 text-gray-400 placeholder-gray-600 outline-none transition-all"
                                                     />
                                                 </div>
-
-                                                <div className="space-y-1 text-xs" onClick={(e) => e.stopPropagation()}>
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-gray-400 w-12">Start:</span>
-                                                        <input
-                                                            type="number"
-                                                            step="0.1"
-                                                            value={clip.startTime.toFixed(1)}
-                                                            onChange={(e) => {
-                                                                e.stopPropagation();
-                                                                const newStart = Math.max(0, parseFloat(e.target.value) || 0);
-                                                                if (newStart < clip.endTime) {
-                                                                    updateClip(clip.id, {
-                                                                        startTime: newStart,
-                                                                        duration: clip.endTime - newStart
-                                                                    });
-                                                                }
-                                                            }}
-                                                            className="bg-gray-600 px-2 py-1 rounded w-20 text-white"
-                                                        />
-                                                        <span className="text-gray-400">s</span>
-                                                    </div>
-
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-gray-400 w-12">End:</span>
-                                                        <input
-                                                            type="number"
-                                                            step="0.1"
-                                                            value={clip.endTime.toFixed(1)}
-                                                            onChange={(e) => {
-                                                                e.stopPropagation();
-                                                                const newEnd = Math.min(duration, parseFloat(e.target.value) || 0);
-                                                                if (newEnd > clip.startTime) {
-                                                                    updateClip(clip.id, {
-                                                                        endTime: newEnd,
-                                                                        duration: newEnd - clip.startTime
-                                                                    });
-                                                                }
-                                                            }}
-                                                            className="bg-gray-600 px-2 py-1 rounded w-20 text-white"
-                                                        />
-                                                        <span className="text-gray-400">s</span>
-                                                    </div>
-
-                                                    <div className="text-gray-400 mt-1">
-                                                        Duration: {formatTime(clip.duration)}
-                                                    </div>
-                                                </div>
-
-                                                {/* Annotations for this clip */}
-                                                {selectedClip === clip.id && annotations.filter(a => a.clipId === clip.id).length > 0 && (
-                                                    <div className="mt-3 pt-3 border-t border-gray-600">
-                                                        <div className="text-xs text-gray-400 mb-2">Annotations ({annotations.filter(a => a.clipId === clip.id).length})</div>
-                                                        <div className="space-y-1 max-h-40 overflow-y-auto">
-                                                            {annotations.filter(a => a.clipId === clip.id).map(ann => (
-                                                                <div
-                                                                    key={ann.id}
-                                                                    className="flex items-center justify-between p-2 bg-gray-600 rounded text-xs hover:bg-gray-500 cursor-pointer"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        seekTo(ann.startTime);
-                                                                        handleAnnotationSelect(ann.id);
-                                                                    }}
-                                                                >
-                                                                    <div className="flex items-center space-x-2 flex-1">
-                                                                        <span>{ann.type === 'text' ? '📝' : ann.type === 'circle' ? '⭕' : ann.type === 'spotlight' ? '🔦' : ann.type === 'arrow' ? '➡️' : ann.type === 'line' ? '📏' : '⬡'}</span>
-                                                                        <span className="truncate">{ann.text || ann.type}</span>
-                                                                        <span className="text-gray-400 text-[10px]">{formatTime(ann.startTime).substring(0, 5)}</span>
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            deleteAnnotation(ann.id);
-                                                                        }}
-                                                                        className="ml-2 text-red-400 hover:text-red-300"
-                                                                    >
-                                                                        ×
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {index === 0 && (
-                                                    <div className="mt-2 text-xs text-gray-400">
-                                                        test
-                                                    </div>
-                                                )}
                                             </div>
-                                            <motion.button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    deleteClip(clip.id);
-                                                }}
-                                                className="p-1 hover:bg-gray-600 rounded text-gray-400 hover:text-red-400 transition-colors"
-                                                title="Delete clip"
-                                                whileHover={{ scale: 1.2, rotate: 10 }}
-                                                whileTap={{ scale: 0.9 }}
-                                            >
-                                                🗑️
-                                            </motion.button>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
+                        {/* Add clip button */}
+                        <div className="p-4 border-t border-white/5">
+                            <motion.button
+                                onClick={() => createClip()}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl text-sm font-semibold shadow-lg shadow-cyan-500/20 transition-all"
+                                whileHover={{ scale: 1.02, y: -1 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <motion.span
+                                    className={isRecording ? 'text-red-300' : ''}
+                                    animate={isRecording ? { scale: [1, 1.2, 1] } : {}}
+                                    transition={isRecording ? { duration: 1, repeat: Infinity } : {}}
+                                >
+                                    {Icons.record}
+                                </motion.span>
+                                Add Shot on Goal (M)
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Styles */}
             <style dangerouslySetInnerHTML={{
                 __html: `
-        * {
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          scroll-behavior: smooth;
-        }
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        body {
-          overflow-x: hidden;
-        }
-        
-        .tool-btn {
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease-in-out;
-        }
-        .tool-btn:hover {
-          background-color: #374151;
-          transform: scale(1.05);
-        }
-        .tool-btn:active {
-          transform: scale(0.95);
-        }
-        
-        .control-btn {
-          padding: 8px 16px;
-          background-color: #374151;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease-in-out;
-        }
-        .control-btn:hover {
-          background-color: #4b5563;
-          transform: translateY(-1px);
-        }
-        .control-btn:active {
-          transform: translateY(0);
-        }
-        
-        .control-btn-large {
-          width: 56px;
-          height: 56px;
-          background-color: #3b82f6;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          font-size: 24px;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-        }
-        .control-btn-large:hover {
-          background-color: #2563eb;
-          transform: scale(1.1);
-          box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
-        }
-        .control-btn-large:active {
-          transform: scale(1.05);
-        }
+                * {
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                }
 
-        input[type="range"] {
-          -webkit-appearance: none;
-          width: 100%;
-          height: 8px;
-          border-radius: 4px;
-          outline: none;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
 
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-          cursor: grab;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(59, 130, 246, 0);
-        }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
 
-        input[type="range"]::-webkit-slider-thumb:hover {
-          transform: scale(1.3);
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 0 4px rgba(59, 130, 246, 0.3);
-        }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                }
 
-        input[type="range"]::-webkit-slider-thumb:active {
-          cursor: grabbing;
-          transform: scale(1.2);
-          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 0 6px rgba(59, 130, 246, 0.4);
-        }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                }
 
-        input[type="range"]::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-          cursor: grab;
-          border: none;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
+                input[type="text"]:focus,
+                input[type="number"]:focus {
+                    outline: none;
+                }
 
-        input[type="range"]::-moz-range-thumb:hover {
-          transform: scale(1.3);
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-        }
+                /* Smooth animations */
+                @keyframes pulse-glow {
+                    0%, 100% {
+                        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+                    }
+                    50% {
+                        box-shadow: 0 0 40px rgba(0, 212, 255, 0.5);
+                    }
+                }
 
-        input[type="range"]::-moz-range-thumb:active {
-          cursor: grabbing;
-          transform: scale(1.2);
-        }
-
-        input[type="number"] {
-          transition: all 0.2s ease-in-out;
-        }
-
-        input[type="number"]:focus {
-          outline: 2px solid #3b82f6;
-          outline-offset: 2px;
-        }
-
-        .select-none {
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-        }
-
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-          background: #1f2937;
-        }
-
-        ::-webkit-scrollbar-thumb {
-          background: #4b5563;
-          border-radius: 4px;
-          transition: background 0.2s;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-          background: #6b7280;
-        }
-
-        .cursor-ew-resize {
-          cursor: ew-resize;
-        }
-
-        .cursor-move {
-          cursor: move;
-        }
-
-        .cursor-grab {
-          cursor: grab;
-        }
-
-        .cursor-grabbing {
-          cursor: grabbing;
-        }
-
-        /* Zoom transition */
-        .timeline-zoom-transition {
-          transition: all 0.3s ease-in-out;
-        }
-
-        /* Smooth animations */
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-
-        @keyframes slideIn {
-          from {
-            transform: translateX(-100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-
-        /* Custom button styles */
-        button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        button:disabled:hover {
-          transform: none !important;
-        }
-
-        /* Video container */
-        video {
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        /* Smooth transitions for all interactive elements */
-        button, input, select {
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-      `}} />
+                .pulse-glow {
+                    animation: pulse-glow 2s ease-in-out infinite;
+                }
+            `}} />
         </div>
     );
 }
-
