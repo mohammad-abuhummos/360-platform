@@ -7,6 +7,8 @@ export default [
   route("/chat", "routes/chat.tsx"),
   route("/components", "routes/components.tsx"),
   route("/login", "routes/login.tsx"),
+  route("/video-analyze", "routes/video-analyze.tsx"),
+  route("/video-analyze-stone", "routes/video-analyze-stone.tsx"),
   route("/management/overview", "routes/management/overview.tsx"),
   route("/management/organization", "routes/management/organization.tsx"),
   route("/management/contacts", "routes/management/contacts.tsx"),
