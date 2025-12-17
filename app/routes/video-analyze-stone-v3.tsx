@@ -1,19 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
-import { animate, motion, AnimatePresence, useMotionValue, useSpring } from "motion/react";
+import { animate, motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "motion/react";
 import { Stage, Layer, Circle, Line, Text, Arrow, RegularPolygon, Transformer } from "react-konva";
 import Konva from "konva";
-import {
-    createVideoAnalysis,
-    updateVideoAnalysis,
-    deleteVideoAnalysis,
-    getAllVideoAnalyses,
-    getVideoAnalysis,
-    saveVideoAnalysisData,
-    type VideoAnalysis,
-    type VideoAnalysisClip,
-    type VideoAnalysisAnnotation,
-} from "~/lib/firebase";
 
 export const meta = () => {
     return [
@@ -30,16 +18,6 @@ interface Clip {
     duration: number;
     type: string;
     description?: string;
-}
-
-// Keyframe for animation recording
-interface Keyframe {
-    time: number;
-    x: number;
-    y: number;
-    rotation?: number;
-    scaleX?: number;
-    scaleY?: number;
 }
 
 interface Annotation {
@@ -63,8 +41,6 @@ interface Annotation {
     rotation?: number;
     scaleX?: number;
     scaleY?: number;
-    // Keyframe animation data
-    keyframes?: Keyframe[];
 }
 
 type Tool = 'select' | 'text' | 'circle' | 'spotlight' | 'line' | 'arrow' | 'connection' | 'polygon';
@@ -400,55 +376,6 @@ const Icons = {
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
         </svg>
     ),
-    save: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-            <polyline points="17 21 17 13 7 13 7 21" />
-            <polyline points="7 3 7 8 15 8" />
-        </svg>
-    ),
-    cloud: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-        </svg>
-    ),
-    cloudCheck: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 16.2A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9" />
-            <polyline points="9 15 12 18 22 8" />
-        </svg>
-    ),
-    fileVideo: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-            <polyline points="14 2 14 8 20 8" />
-            <path d="M10 11l5 3-5 3v-6z" />
-        </svg>
-    ),
-    folderOpen: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            <path d="M2 10h20" />
-        </svg>
-    ),
-    spinner: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
-    ),
-    database: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <ellipse cx="12" cy="5" rx="9" ry="3" />
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-        </svg>
-    ),
-    clock: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-        </svg>
-    ),
 };
 
 // Tool button component
@@ -501,7 +428,6 @@ const NavButton = ({ icon, active = false, badge }: { icon: React.ReactNode; act
 );
 
 export default function VideoAnalyzeStone() {
-    const navigate = useNavigate();
     const [videoFile, setVideoFile] = useState<string | null>(null);
     const [clips, setClips] = useState<Clip[]>([]);
     const [selectedClip, setSelectedClip] = useState<string | null>(null);
@@ -529,23 +455,6 @@ export default function VideoAnalyzeStone() {
     const [isMuted, setIsMuted] = useState(false);
     const [volume, setVolume] = useState(1);
     const [layers, setLayers] = useState<TimelineLayer[]>(DEFAULT_LAYERS);
-
-    // Firebase state
-    const [savedAnalyses, setSavedAnalyses] = useState<VideoAnalysis[]>([]);
-    const [currentAnalysisId, setCurrentAnalysisId] = useState<string | null>(null);
-    const [currentAnalysisName, setCurrentAnalysisName] = useState("");
-    const [showAnalysisPicker, setShowAnalysisPicker] = useState(true);
-    const [isLoadingAnalyses, setIsLoadingAnalyses] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [lastSaved, setLastSaved] = useState<Date | null>(null);
-    const [showNewAnalysisDialog, setShowNewAnalysisDialog] = useState(false);
-    const [newAnalysisName, setNewAnalysisName] = useState("");
-    const [videoFileName, setVideoFileName] = useState("");
-
-    // Object Recording state
-    const [isRecordingMovement, setIsRecordingMovement] = useState(false);
-    const [recordingAnnotationId, setRecordingAnnotationId] = useState<string | null>(null);
-    const [isShiftPressed, setIsShiftPressed] = useState(false);
     const [resizingAnnotation, setResizingAnnotation] = useState<{ id: string; edge: 'start' | 'end' } | null>(null);
     const [draggingAnnotation, setDraggingAnnotation] = useState<{ id: string; startX: number; originalStartTime: number } | null>(null);
     const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
@@ -557,9 +466,6 @@ export default function VideoAnalyzeStone() {
     const stageRef = useRef<Konva.Stage>(null);
     const transformerRef = useRef<Konva.Transformer>(null);
     const videoContainerRef = useRef<HTMLDivElement>(null);
-    const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const lastRecordedPositionRef = useRef<{ x: number; y: number } | null>(null);
 
     // Smooth spring values for playhead
     const playheadX = useMotionValue(0);
@@ -571,15 +477,9 @@ export default function VideoAnalyzeStone() {
         if (file) {
             const url = URL.createObjectURL(file);
             setVideoFile(url);
-            setVideoFileName(file.name);
+            setClips([]);
+            setAnnotations([]);
             setSelectedClip(null);
-
-            // Update analysis with video info if we have one
-            if (currentAnalysisId) {
-                updateVideoAnalysis(currentAnalysisId, {
-                    videoFileName: file.name,
-                });
-            }
         }
     };
 
@@ -611,442 +511,42 @@ export default function VideoAnalyzeStone() {
         }
     }, [currentTime, timelineScroll, zoomLevel, duration, playheadX]);
 
-    // Calculate and update canvas dimensions to match displayed video size
-    const updateCanvasDimensions = useCallback(() => {
-        if (videoContainerRef.current && videoRef.current) {
-            const container = videoContainerRef.current.getBoundingClientRect();
-            const video = videoRef.current;
-
-            if (video.videoWidth === 0 || video.videoHeight === 0) return;
-
-            const videoAspect = video.videoWidth / video.videoHeight;
-            const containerAspect = container.width / container.height;
-
-            let width, height;
-            if (containerAspect > videoAspect) {
-                // Container is wider - fit to height
-                height = container.height;
-                width = height * videoAspect;
-            } else {
-                // Container is taller - fit to width
-                width = container.width;
-                height = width / videoAspect;
-            }
-
-            setCanvasDimensions({ width, height });
-            console.log(`Canvas dimensions updated: ${width}x${height} (video: ${video.videoWidth}x${video.videoHeight})`);
-        }
-    }, []);
-
     // Handle video loaded
     const handleLoadedMetadata = () => {
         if (videoRef.current) {
             setDuration(videoRef.current.duration);
-            // Calculate displayed size, not natural size
-            updateCanvasDimensions();
+            setCanvasDimensions({
+                width: videoRef.current.videoWidth,
+                height: videoRef.current.videoHeight
+            });
         }
     };
 
     // Update canvas dimensions on window resize
     useEffect(() => {
+        const updateCanvasDimensions = () => {
+            if (videoContainerRef.current && videoRef.current) {
+                const container = videoContainerRef.current.getBoundingClientRect();
+                const video = videoRef.current;
+                const videoAspect = video.videoWidth / video.videoHeight;
+                const containerAspect = container.width / container.height;
+
+                let width, height;
+                if (containerAspect > videoAspect) {
+                    height = container.height;
+                    width = height * videoAspect;
+                } else {
+                    width = container.width;
+                    height = width / videoAspect;
+                }
+
+                setCanvasDimensions({ width, height });
+            }
+        };
+
         window.addEventListener('resize', updateCanvasDimensions);
-        // Also update after a short delay to ensure layout is complete
-        const timeout = setTimeout(updateCanvasDimensions, 100);
-        return () => {
-            window.removeEventListener('resize', updateCanvasDimensions);
-            clearTimeout(timeout);
-        };
-    }, [videoFile, updateCanvasDimensions]);
-
-    // Load saved analyses on mount
-    useEffect(() => {
-        loadSavedAnalyses();
-    }, []);
-
-    // Auto-save when clips or annotations change
-    useEffect(() => {
-        if (currentAnalysisId && (clips.length > 0 || annotations.length > 0)) {
-            // Clear previous timeout
-            if (autoSaveTimeoutRef.current) {
-                clearTimeout(autoSaveTimeoutRef.current);
-            }
-
-            // Set new timeout for auto-save (2 seconds after last change)
-            autoSaveTimeoutRef.current = setTimeout(() => {
-                handleAutoSave();
-            }, 2000);
-        }
-
-        return () => {
-            if (autoSaveTimeoutRef.current) {
-                clearTimeout(autoSaveTimeoutRef.current);
-            }
-        };
-    }, [clips, annotations, currentAnalysisId]);
-
-    // Animation frame counter for smooth rendering
-    const [animationTick, setAnimationTick] = useState(0);
-
-    // Animation loop for smooth transitions
-    useEffect(() => {
-        let frameId: number;
-
-        const animate = () => {
-            // Only run animation loop when video is playing or when we need smooth transitions
-            if (isPlaying || isRecordingMovement) {
-                setAnimationTick(t => t + 1);
-            }
-            frameId = requestAnimationFrame(animate);
-        };
-
-        // Start animation loop when video is playing
-        if (isPlaying || isRecordingMovement) {
-            frameId = requestAnimationFrame(animate);
-        }
-
-        return () => {
-            if (frameId) {
-                cancelAnimationFrame(frameId);
-            }
-        };
-    }, [isPlaying, isRecordingMovement]);
-
-    // Shift key detection for recording mode
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Shift' && !isShiftPressed) {
-                setIsShiftPressed(true);
-            }
-        };
-
-        const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.key === 'Shift') {
-                setIsShiftPressed(false);
-                // Stop recording when shift is released
-                if (isRecordingMovement) {
-                    stopRecordingMovement();
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [isShiftPressed, isRecordingMovement]);
-
-    // Start recording movement for an annotation
-    const startRecordingMovement = (annotationId: string, initialX: number, initialY: number) => {
-        if (!isPlaying) {
-            // Start playing video when recording starts
-            videoRef.current?.play();
-            setIsPlaying(true);
-        }
-
-        setIsRecordingMovement(true);
-        setRecordingAnnotationId(annotationId);
-        lastRecordedPositionRef.current = { x: initialX, y: initialY };
-
-        // Add initial keyframe
-        const ann = annotations.find(a => a.id === annotationId);
-        if (ann) {
-            const initialKeyframe: Keyframe = {
-                time: currentTime,
-                x: initialX,
-                y: initialY,
-                rotation: ann.rotation,
-                scaleX: ann.scaleX,
-                scaleY: ann.scaleY,
-            };
-
-            setAnnotations(prev => prev.map(a => {
-                if (a.id === annotationId) {
-                    const existingKeyframes = a.keyframes || [];
-                    return {
-                        ...a,
-                        keyframes: [...existingKeyframes, initialKeyframe]
-                    };
-                }
-                return a;
-            }));
-        }
-    };
-
-    // Record a keyframe at the current position
-    const recordKeyframe = (annotationId: string, x: number, y: number, rotation?: number) => {
-        if (!isRecordingMovement || recordingAnnotationId !== annotationId) return;
-
-        // Record more frequently for smoother movement (reduced threshold from 5 to 2 pixels)
-        const lastPos = lastRecordedPositionRef.current;
-        if (lastPos) {
-            const distance = Math.sqrt(Math.pow(x - lastPos.x, 2) + Math.pow(y - lastPos.y, 2));
-            if (distance < 2) return; // Skip if moved less than 2 pixels
-        }
-
-        lastRecordedPositionRef.current = { x, y };
-
-        const keyframe: Keyframe = {
-            time: currentTime,
-            x,
-            y,
-            rotation,
-        };
-
-        setAnnotations(prev => prev.map(a => {
-            if (a.id === annotationId) {
-                const existingKeyframes = a.keyframes || [];
-                // Remove any keyframe very close in time (reduced from 0.05 to 0.016 = ~60fps)
-                const filteredKeyframes = existingKeyframes.filter(k => Math.abs(k.time - currentTime) > 0.016);
-                return {
-                    ...a,
-                    keyframes: [...filteredKeyframes, keyframe].sort((a, b) => a.time - b.time)
-                };
-            }
-            return a;
-        }));
-    };
-
-    // Stop recording movement
-    const stopRecordingMovement = () => {
-        if (recordingIntervalRef.current) {
-            clearInterval(recordingIntervalRef.current);
-            recordingIntervalRef.current = null;
-        }
-        setIsRecordingMovement(false);
-        setRecordingAnnotationId(null);
-        lastRecordedPositionRef.current = null;
-    };
-
-    // Clear all keyframes for an annotation
-    const clearKeyframes = (annotationId: string) => {
-        setAnnotations(prev => prev.map(a => {
-            if (a.id === annotationId) {
-                return { ...a, keyframes: [] };
-            }
-            return a;
-        }));
-    };
-
-    // Smooth easing function (ease-in-out)
-    const smoothstep = (t: number): number => {
-        return t * t * (3 - 2 * t);
-    };
-
-    // Even smoother easing (smootherstep)
-    const smootherstep = (t: number): number => {
-        return t * t * t * (t * (t * 6 - 15) + 10);
-    };
-
-    // Elastic ease out for bouncy feel
-    const elasticOut = (t: number): number => {
-        const p = 0.3;
-        return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
-    };
-
-    // Smooth lerp function
-    const lerp = (start: number, end: number, factor: number): number => {
-        return start + (end - start) * factor;
-    };
-
-    // Track smoothed positions for each annotation
-    const smoothedPositionsRef = useRef<Map<string, { x: number; y: number; opacity: number; rotation: number; scaleX: number; scaleY: number }>>(new Map());
-
-    // Animation frame ref for cleanup
-    const animationFrameRef = useRef<number | null>(null);
-
-    // Smoothing factor (0-1, higher = faster catch-up, lower = smoother)
-    const SMOOTHING_FACTOR = 0.15;
-
-    // Interpolate position between keyframes with smooth easing
-    const interpolateKeyframes = (keyframes: Keyframe[], time: number): { x: number; y: number; rotation?: number; scaleX?: number; scaleY?: number } | null => {
-        if (!keyframes || keyframes.length === 0) return null;
-
-        // Sort keyframes by time
-        const sorted = [...keyframes].sort((a, b) => a.time - b.time);
-
-        // If before first keyframe, return first keyframe position
-        if (time <= sorted[0].time) {
-            return sorted[0];
-        }
-
-        // If after last keyframe, return last keyframe position
-        if (time >= sorted[sorted.length - 1].time) {
-            return sorted[sorted.length - 1];
-        }
-
-        // Find the two keyframes to interpolate between
-        for (let i = 0; i < sorted.length - 1; i++) {
-            const k1 = sorted[i];
-            const k2 = sorted[i + 1];
-
-            if (time >= k1.time && time <= k2.time) {
-                // Calculate linear t
-                const linearT = (time - k1.time) / (k2.time - k1.time);
-                // Apply smooth easing for natural movement
-                const t = smootherstep(linearT);
-
-                return {
-                    x: k1.x + (k2.x - k1.x) * t,
-                    y: k1.y + (k2.y - k1.y) * t,
-                    rotation: k1.rotation !== undefined && k2.rotation !== undefined
-                        ? k1.rotation + (k2.rotation - k1.rotation) * t
-                        : k1.rotation,
-                    scaleX: k1.scaleX !== undefined && k2.scaleX !== undefined
-                        ? k1.scaleX + (k2.scaleX - k1.scaleX) * t
-                        : k1.scaleX,
-                    scaleY: k1.scaleY !== undefined && k2.scaleY !== undefined
-                        ? k1.scaleY + (k2.scaleY - k1.scaleY) * t
-                        : k1.scaleY,
-                };
-            }
-        }
-
-        return null;
-    };
-
-    // Load all saved analyses from Firestore
-    const loadSavedAnalyses = async () => {
-        setIsLoadingAnalyses(true);
-        try {
-            const analyses = await getAllVideoAnalyses();
-            setSavedAnalyses(analyses);
-        } catch (error) {
-            console.error('Failed to load analyses:', error);
-        } finally {
-            setIsLoadingAnalyses(false);
-        }
-    };
-
-    // Create a new analysis
-    const handleCreateNewAnalysis = async () => {
-        if (!newAnalysisName.trim()) return;
-
-        try {
-            const id = await createVideoAnalysis({
-                name: newAnalysisName.trim(),
-                clips: [],
-                annotations: [],
-                videoFileName: '',
-                videoDuration: 0,
-            });
-
-            setCurrentAnalysisId(id);
-            setCurrentAnalysisName(newAnalysisName.trim());
-            setShowNewAnalysisDialog(false);
-            setShowAnalysisPicker(false);
-            setNewAnalysisName("");
-
-            // Reset editor state
-            setClips([]);
-            setAnnotations([]);
-            setVideoFile(null);
-            setSelectedClip(null);
-
-            // Refresh the list
-            await loadSavedAnalyses();
-        } catch (error) {
-            console.error('Failed to create analysis:', error);
-        }
-    };
-
-    // Load a saved analysis
-    const handleLoadAnalysis = async (analysis: VideoAnalysis) => {
-        if (!analysis.id) return;
-
-        try {
-            const fullAnalysis = await getVideoAnalysis(analysis.id);
-            if (fullAnalysis) {
-                setCurrentAnalysisId(fullAnalysis.id!);
-                setCurrentAnalysisName(fullAnalysis.name);
-                setClips(fullAnalysis.clips || []);
-                setAnnotations(fullAnalysis.annotations || []);
-                setVideoFileName(fullAnalysis.videoFileName || '');
-                setShowAnalysisPicker(false);
-
-                // Reset video - user will need to upload it
-                setVideoFile(null);
-                setDuration(fullAnalysis.videoDuration || 0);
-            }
-        } catch (error) {
-            console.error('Failed to load analysis:', error);
-        }
-    };
-
-    // Auto-save current analysis
-    const handleAutoSave = async () => {
-        if (!currentAnalysisId) return;
-
-        // Only save if we have valid canvas dimensions (not default)
-        if (canvasDimensions.width === 1920 && canvasDimensions.height === 1080 && videoRef.current) {
-            // Try to update dimensions first
-            updateCanvasDimensions();
-        }
-
-        setIsSaving(true);
-        try {
-            console.log(`Saving with canvas dimensions: ${canvasDimensions.width}x${canvasDimensions.height}`);
-            await saveVideoAnalysisData(
-                currentAnalysisId,
-                clips,
-                annotations,
-                canvasDimensions.width,
-                canvasDimensions.height
-            );
-            setLastSaved(new Date());
-        } catch (error) {
-            console.error('Auto-save failed:', error);
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    // Manual save
-    const handleManualSave = async () => {
-        if (!currentAnalysisId) return;
-
-        setIsSaving(true);
-        try {
-            await updateVideoAnalysis(currentAnalysisId, {
-                name: currentAnalysisName,
-                clips,
-                annotations,
-                videoFileName,
-                videoDuration: duration,
-                canvasWidth: canvasDimensions.width,
-                canvasHeight: canvasDimensions.height,
-            });
-            setLastSaved(new Date());
-        } catch (error) {
-            console.error('Save failed:', error);
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    // Delete an analysis
-    const handleDeleteAnalysis = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this analysis?')) return;
-
-        try {
-            await deleteVideoAnalysis(id);
-            await loadSavedAnalyses();
-
-            // If deleting current analysis, reset state
-            if (id === currentAnalysisId) {
-                setCurrentAnalysisId(null);
-                setCurrentAnalysisName("");
-                setClips([]);
-                setAnnotations([]);
-                setVideoFile(null);
-                setShowAnalysisPicker(true);
-            }
-        } catch (error) {
-            console.error('Failed to delete analysis:', error);
-        }
-    };
+        return () => window.removeEventListener('resize', updateCanvasDimensions);
+    }, [videoFile]);
 
     // Seek to time
     const seekTo = useCallback((time: number) => {
@@ -1363,87 +863,23 @@ export default function VideoAnalyzeStone() {
         }
     };
 
-    // Get visible annotations at current time with smooth transitions
+    // Get visible annotations at current time
     const getVisibleAnnotations = () => {
-        // First, get all annotations that should be visible or are fading
-        const FADE_DURATION = 0.5; // Longer fade for smoother effect
-        const FADE_MARGIN = 0.1; // Extra margin for fade out completion
-
         return annotations.filter(ann => {
-            // Include annotations that are visible or within fade margin
-            return currentTime >= ann.startTime - FADE_MARGIN && currentTime <= ann.endTime + FADE_MARGIN;
+            return currentTime >= ann.startTime && currentTime <= ann.endTime;
         }).map(ann => {
-            let targetOpacity = ann.opacity || 1;
+            const fadeDuration = 0.3;
+            let opacity = ann.opacity || 1;
 
-            // Calculate fade with smooth easing
-            if (currentTime < ann.startTime) {
-                // Not yet visible
-                targetOpacity = 0;
-            } else if (currentTime < ann.startTime + FADE_DURATION) {
-                // Fading in - use smootherstep for smooth entrance
-                const fadeProgress = (currentTime - ann.startTime) / FADE_DURATION;
-                targetOpacity *= smootherstep(fadeProgress);
-            } else if (currentTime > ann.endTime - FADE_DURATION) {
-                // Fading out - use smootherstep for smooth exit
-                const fadeProgress = (ann.endTime - currentTime) / FADE_DURATION;
-                targetOpacity *= smootherstep(Math.max(0, fadeProgress));
+            if (currentTime < ann.startTime + fadeDuration) {
+                opacity *= (currentTime - ann.startTime) / fadeDuration;
+            }
+            if (currentTime > ann.endTime - fadeDuration) {
+                opacity *= (ann.endTime - currentTime) / fadeDuration;
             }
 
-            // Clamp opacity
-            targetOpacity = Math.max(0, Math.min(1, targetOpacity));
-
-            // Get target position from keyframe interpolation
-            let targetX = ann.x;
-            let targetY = ann.y;
-            let targetRotation = ann.rotation || 0;
-            let targetScaleX = ann.scaleX || 1;
-            let targetScaleY = ann.scaleY || 1;
-
-            if (ann.keyframes && ann.keyframes.length > 0) {
-                const interpolated = interpolateKeyframes(ann.keyframes, currentTime);
-                if (interpolated) {
-                    targetX = interpolated.x;
-                    targetY = interpolated.y;
-                    targetRotation = interpolated.rotation ?? targetRotation;
-                    targetScaleX = interpolated.scaleX ?? targetScaleX;
-                    targetScaleY = interpolated.scaleY ?? targetScaleY;
-                }
-            }
-
-            // Get or initialize smoothed position
-            let smoothed = smoothedPositionsRef.current.get(ann.id);
-            if (!smoothed) {
-                // Initialize with target values
-                smoothed = {
-                    x: targetX,
-                    y: targetY,
-                    opacity: targetOpacity,
-                    rotation: targetRotation,
-                    scaleX: targetScaleX,
-                    scaleY: targetScaleY
-                };
-                smoothedPositionsRef.current.set(ann.id, smoothed);
-            } else {
-                // Lerp towards target for smooth movement
-                smoothed.x = lerp(smoothed.x, targetX, SMOOTHING_FACTOR);
-                smoothed.y = lerp(smoothed.y, targetY, SMOOTHING_FACTOR);
-                smoothed.opacity = lerp(smoothed.opacity, targetOpacity, SMOOTHING_FACTOR * 1.5); // Faster opacity transition
-                smoothed.rotation = lerp(smoothed.rotation, targetRotation, SMOOTHING_FACTOR);
-                smoothed.scaleX = lerp(smoothed.scaleX, targetScaleX, SMOOTHING_FACTOR);
-                smoothed.scaleY = lerp(smoothed.scaleY, targetScaleY, SMOOTHING_FACTOR);
-                smoothedPositionsRef.current.set(ann.id, smoothed);
-            }
-
-            return {
-                ...ann,
-                x: smoothed.x,
-                y: smoothed.y,
-                opacity: smoothed.opacity,
-                rotation: smoothed.rotation,
-                scaleX: smoothed.scaleX,
-                scaleY: smoothed.scaleY
-            };
-        }).filter(ann => ann.opacity > 0.01); // Filter out fully faded annotations
+            return { ...ann, opacity: Math.max(0, Math.min(1, opacity)) };
+        });
     };
 
     // Handle timeline click to seek
@@ -1747,174 +1183,6 @@ export default function VideoAnalyzeStone() {
 
     return (
         <div className="flex h-screen bg-[#0a0a0f] text-white overflow-hidden font-['Inter',system-ui,sans-serif]">
-            {/* Analysis Picker Modal */}
-            <AnimatePresence>
-                {showAnalysisPicker && (
-                    <motion.div
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        <motion.div
-                            className="w-full max-w-2xl bg-[#12121a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                        >
-                            {/* Header */}
-                            <div className="p-6 border-b border-white/10">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-cyan-500/20 rounded-lg text-cyan-400">
-                                        {Icons.database}
-                                    </div>
-                                    <h2 className="text-xl font-bold">Video Analysis Library</h2>
-                                </div>
-                                <p className="text-gray-400 text-sm">Select an existing analysis to continue editing or create a new one</p>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
-                                {isLoadingAnalyses ? (
-                                    <div className="flex items-center justify-center py-12">
-                                        <div className="flex items-center gap-3 text-gray-400">
-                                            <motion.div
-                                                animate={{ rotate: 360 }}
-                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                            >
-                                                {Icons.spinner}
-                                            </motion.div>
-                                            Loading analyses...
-                                        </div>
-                                    </div>
-                                ) : savedAnalyses.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <div className="w-16 h-16 mx-auto mb-4 bg-white/5 rounded-full flex items-center justify-center text-gray-600">
-                                            {Icons.folderOpen}
-                                        </div>
-                                        <p className="text-gray-500 mb-2">No saved analyses yet</p>
-                                        <p className="text-gray-600 text-sm">Create your first video analysis to get started</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {savedAnalyses.map((analysis, index) => (
-                                            <motion.div
-                                                key={analysis.id}
-                                                className="group p-4 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-cyan-500/30 rounded-xl cursor-pointer transition-all"
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: index * 0.05 }}
-                                                onClick={() => handleLoadAnalysis(analysis)}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
-                                                        {Icons.fileVideo}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <h3 className="font-semibold text-white truncate">{analysis.name}</h3>
-                                                        <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-                                                            {analysis.videoFileName && (
-                                                                <span className="truncate max-w-[200px]">📹 {analysis.videoFileName}</span>
-                                                            )}
-                                                            <span>{analysis.clips?.length || 0} clips</span>
-                                                            <span>{analysis.annotations?.length || 0} annotations</span>
-                                                        </div>
-                                                    </div>
-                                                    <motion.button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeleteAnalysis(analysis.id!);
-                                                        }}
-                                                        className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-lg transition-all"
-                                                        whileHover={{ scale: 1.1 }}
-                                                        whileTap={{ scale: 0.9 }}
-                                                    >
-                                                        {Icons.trash}
-                                                    </motion.button>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="p-6 border-t border-white/10 bg-white/[0.02]">
-                                <motion.button
-                                    onClick={() => setShowNewAnalysisDialog(true)}
-                                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 rounded-xl font-semibold shadow-lg shadow-cyan-500/20 transition-all"
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    {Icons.plus}
-                                    Create New Analysis
-                                </motion.button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* New Analysis Dialog */}
-            <AnimatePresence>
-                {showNewAnalysisDialog && (
-                    <motion.div
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        <motion.div
-                            className="w-full max-w-md bg-[#12121a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                        >
-                            <div className="p-6">
-                                <h2 className="text-xl font-bold mb-4">Create New Analysis</h2>
-                                <input
-                                    type="text"
-                                    value={newAnalysisName}
-                                    onChange={(e) => setNewAnalysisName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleCreateNewAnalysis();
-                                        if (e.key === 'Escape') {
-                                            setShowNewAnalysisDialog(false);
-                                            setNewAnalysisName("");
-                                        }
-                                    }}
-                                    placeholder="Analysis name (e.g., Match vs Team A)"
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-                                    autoFocus
-                                />
-                                <div className="flex gap-3 mt-4">
-                                    <motion.button
-                                        onClick={handleCreateNewAnalysis}
-                                        disabled={!newAnalysisName.trim()}
-                                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold transition-all"
-                                        whileHover={{ scale: newAnalysisName.trim() ? 1.02 : 1 }}
-                                        whileTap={{ scale: newAnalysisName.trim() ? 0.98 : 1 }}
-                                    >
-                                        Create
-                                    </motion.button>
-                                    <motion.button
-                                        onClick={() => {
-                                            setShowNewAnalysisDialog(false);
-                                            setNewAnalysisName("");
-                                        }}
-                                        className="flex-1 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-semibold transition-all"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        Cancel
-                                    </motion.button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* Left Sidebar - Navigation */}
             <motion.div
                 className="w-14 bg-[#0f0f15] border-r border-white/5 flex flex-col items-center py-4"
@@ -1981,119 +1249,17 @@ export default function VideoAnalyzeStone() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 >
-                    <div className="flex items-center gap-4">
-                        <motion.button
-                            onClick={() => setShowAnalysisPicker(true)}
-                            className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            title="Back to Library"
-                        >
-                            {Icons.folderOpen}
-                        </motion.button>
-                        <div>
-                            <h1 className="text-lg font-semibold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                                {currentAnalysisName || "Untitled Analysis"}
-                            </h1>
-                            {videoFileName && (
-                                <p className="text-xs text-gray-500 truncate max-w-[200px]">{videoFileName}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {/* Recording Indicator */}
-                        {isRecordingMovement && (
-                            <motion.div
-                                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 border border-red-500/50 rounded-lg"
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                            >
-                                <motion.div
-                                    className="w-3 h-3 bg-red-500 rounded-full"
-                                    animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-                                    transition={{ duration: 1, repeat: Infinity }}
-                                />
-                                <span className="text-red-400 text-sm font-medium">Recording Motion</span>
-                            </motion.div>
-                        )}
-
-                        {/* Shift Key Indicator */}
-                        {isShiftPressed && !isRecordingMovement && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
-                                    <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5" />
-                                </svg>
-                                <span className="text-purple-400 text-sm font-medium">Shift + Drag to Record</span>
-                            </div>
-                        )}
-
-                        {/* Save Status */}
-                        {currentAnalysisId && (
-                            <div className="flex items-center gap-2 text-sm">
-                                {isSaving ? (
-                                    <div className="flex items-center gap-2 text-yellow-400">
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        >
-                                            {Icons.spinner}
-                                        </motion.div>
-                                        <span>Saving...</span>
-                                    </div>
-                                ) : lastSaved ? (
-                                    <div className="flex items-center gap-2 text-green-400">
-                                        {Icons.cloudCheck}
-                                        <span>Saved</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2 text-gray-500">
-                                        {Icons.cloud}
-                                        <span>Not saved</span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Manual Save Button */}
-                        {currentAnalysisId && (
-                            <motion.button
-                                onClick={handleManualSave}
-                                disabled={isSaving}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                {Icons.save}
-                                Save
-                            </motion.button>
-                        )}
-
-                        {/* Preview Button */}
-                        {currentAnalysisId && (
-                            <motion.button
-                                onClick={() => navigate(`/video-preview/${currentAnalysisId}`)}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg text-sm font-medium transition-all"
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
-                                </svg>
-                                Preview
-                            </motion.button>
-                        )}
-
-                        <motion.button
-                            onClick={() => setShowAnalysisPicker(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-all"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            Exit analytics
-                            {Icons.x}
-                        </motion.button>
-                    </div>
+                    <h1 className="text-lg font-semibold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent" dir="rtl">
+                        فرسان_وحدات2
+                    </h1>
+                    <motion.button
+                        className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-medium transition-all"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        Exit analytics
+                        {Icons.x}
+                    </motion.button>
                 </motion.div>
 
                 {/* Video Display Area */}
@@ -2132,32 +1298,8 @@ export default function VideoAnalyzeStone() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
                             >
-                                {videoFileName ? (
-                                    <>
-                                        <span className="text-cyan-400 font-medium">Previously used:</span> {videoFileName}
-                                        <br />
-                                        <span className="text-gray-600">Upload the same video to continue editing</span>
-                                    </>
-                                ) : (
-                                    "Upload your football match video to start editing"
-                                )}
+                                Upload your football match video to start editing
                             </motion.p>
-
-                            {/* Show saved data info */}
-                            {(clips.length > 0 || annotations.length > 0) && (
-                                <motion.div
-                                    className="mt-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-sm"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3 }}
-                                >
-                                    <div className="text-cyan-400 font-medium mb-1">Saved data loaded:</div>
-                                    <div className="text-gray-400 flex gap-4 justify-center">
-                                        <span>{clips.length} clips</span>
-                                        <span>{annotations.length} annotations</span>
-                                    </div>
-                                </motion.div>
-                            )}
                         </motion.div>
                     ) : (
                         <div ref={videoContainerRef} className="relative w-full h-full flex items-center justify-center">
@@ -2210,25 +1352,7 @@ export default function VideoAnalyzeStone() {
                                                 draggable: activeTool === 'select',
                                                 onClick: () => handleAnnotationSelect(ann.id),
                                                 onTap: () => handleAnnotationSelect(ann.id),
-                                                onDragStart: (e: any) => {
-                                                    // Start recording if Shift is pressed
-                                                    if (isShiftPressed) {
-                                                        startRecordingMovement(ann.id, e.target.x(), e.target.y());
-                                                    }
-                                                },
-                                                onDragMove: (e: any) => {
-                                                    // Record keyframe if recording
-                                                    if (isRecordingMovement && recordingAnnotationId === ann.id) {
-                                                        recordKeyframe(ann.id, e.target.x(), e.target.y(), e.target.rotation());
-                                                    }
-                                                },
                                                 onDragEnd: (e: any) => {
-                                                    // Stop recording if active
-                                                    if (isRecordingMovement && recordingAnnotationId === ann.id) {
-                                                        // Add final keyframe
-                                                        recordKeyframe(ann.id, e.target.x(), e.target.y(), e.target.rotation());
-                                                        stopRecordingMovement();
-                                                    }
                                                     updateAnnotation(ann.id, {
                                                         x: e.target.x(),
                                                         y: e.target.y()
@@ -2844,7 +1968,7 @@ export default function VideoAnalyzeStone() {
                                                                 {/* Item content */}
                                                                 <div className="flex items-center h-full px-2 pointer-events-none overflow-hidden">
                                                                     <div
-                                                                        className="w-4 h-4 rounded flex items-center justify-center shrink-0 mr-1.5"
+                                                                        className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 mr-1.5"
                                                                         style={{ color: layer.color }}
                                                                     >
                                                                         {getLayerIcon(layer.icon)}
@@ -2855,29 +1979,7 @@ export default function VideoAnalyzeStone() {
                                                                     >
                                                                         {item.name}
                                                                     </span>
-                                                                    {/* Keyframe indicator */}
-                                                                    {!item.isClip && annotations.find(a => a.id === item.id)?.keyframes && annotations.find(a => a.id === item.id)!.keyframes!.length > 0 && (
-                                                                        <div className="ml-1 flex items-center gap-0.5">
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" title="Has recorded motion" />
-                                                                        </div>
-                                                                    )}
                                                                 </div>
-
-                                                                {/* Keyframe dots on timeline item */}
-                                                                {!item.isClip && annotations.find(a => a.id === item.id)?.keyframes?.map((kf, idx) => {
-                                                                    const ann = annotations.find(a => a.id === item.id)!;
-                                                                    const itemDuration = item.endTime - item.startTime;
-                                                                    const keyframePosition = ((kf.time - item.startTime) / itemDuration) * 100;
-                                                                    if (keyframePosition < 0 || keyframePosition > 100) return null;
-                                                                    return (
-                                                                        <div
-                                                                            key={idx}
-                                                                            className="absolute top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white/80 pointer-events-none"
-                                                                            style={{ left: `${keyframePosition}%` }}
-                                                                            title={`Keyframe at ${kf.time.toFixed(2)}s`}
-                                                                        />
-                                                                    );
-                                                                })}
 
                                                                 {/* Right resize handle */}
                                                                 <div
@@ -3093,58 +2195,6 @@ export default function VideoAnalyzeStone() {
                                 </motion.span>
                                 Add Shot on Goal (M)
                             </motion.button>
-                        </div>
-
-                        {/* Motion Recording Info */}
-                        <div className="p-4 border-t border-white/5">
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
-                                </svg>
-                                Motion Recording
-                            </h3>
-                            <div className="text-xs text-gray-500 mb-3">
-                                Hold <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-300 font-mono">Shift</kbd> while dragging an annotation to record its movement over time.
-                            </div>
-
-                            {/* Selected annotation keyframe controls */}
-                            {selectedAnnotationId && (
-                                <div className="space-y-2">
-                                    {(() => {
-                                        const selectedAnn = annotations.find(a => a.id === selectedAnnotationId);
-                                        if (!selectedAnn) return null;
-                                        const hasKeyframes = selectedAnn.keyframes && selectedAnn.keyframes.length > 0;
-                                        return (
-                                            <>
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-gray-400">Selected: {selectedAnn.type}</span>
-                                                    {hasKeyframes && (
-                                                        <span className="text-purple-400">
-                                                            {selectedAnn.keyframes!.length} keyframes
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {hasKeyframes && (
-                                                    <motion.button
-                                                        onClick={() => clearKeyframes(selectedAnnotationId)}
-                                                        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all"
-                                                        whileHover={{ scale: 1.02 }}
-                                                        whileTap={{ scale: 0.98 }}
-                                                    >
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <path d="M3 6h18" />
-                                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                                        </svg>
-                                                        Clear All Keyframes
-                                                    </motion.button>
-                                                )}
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                            )}
                         </div>
                     </motion.div>
                 )}

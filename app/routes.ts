@@ -9,6 +9,7 @@ export default [
   route("/login", "routes/login.tsx"),
   route("/video-analyze", "routes/video-analyze.tsx"),
   route("/video-analyze-stone", "routes/video-analyze-stone.tsx"),
+  route("/video-preview/:id", "routes/video-preview.$id.tsx"),
   route("/management/overview", "routes/management/overview.tsx"),
   route("/management/organization", "routes/management/organization.tsx"),
   route("/management/contacts", "routes/management/contacts.tsx"),
