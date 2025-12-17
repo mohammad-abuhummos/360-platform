@@ -45,27 +45,6 @@ interface Annotation {
 
 type Tool = 'select' | 'text' | 'circle' | 'spotlight' | 'line' | 'arrow' | 'connection' | 'polygon';
 
-// Timeline layer configuration
-interface TimelineLayer {
-    id: string;
-    name: string;
-    type: 'clips' | 'text' | 'circle' | 'spotlight' | 'line' | 'arrow' | 'polygon';
-    color: string;
-    icon: 'clips' | 'text' | 'circle' | 'spotlight' | 'line' | 'connection' | 'arrow' | 'polygon';
-    expanded: boolean;
-    visible: boolean;
-}
-
-const DEFAULT_LAYERS: TimelineLayer[] = [
-    { id: 'clips', name: 'Clips', type: 'clips', color: '#3b82f6', icon: 'clips', expanded: true, visible: true },
-    { id: 'text', name: 'Text', type: 'text', color: '#f59e0b', icon: 'text', expanded: true, visible: true },
-    { id: 'circle', name: 'Circles', type: 'circle', color: '#10b981', icon: 'circle', expanded: true, visible: true },
-    { id: 'spotlight', name: 'Spotlights', type: 'spotlight', color: '#fbbf24', icon: 'spotlight', expanded: true, visible: true },
-    { id: 'line', name: 'Lines', type: 'line', color: '#8b5cf6', icon: 'line', expanded: true, visible: true },
-    { id: 'arrow', name: 'Arrows', type: 'arrow', color: '#ec4899', icon: 'arrow', expanded: true, visible: true },
-    { id: 'polygon', name: 'Polygons', type: 'polygon', color: '#06b6d4', icon: 'polygon', expanded: true, visible: true },
-];
-
 // Modern SVG Icons
 const Icons = {
     home: (
@@ -323,59 +302,6 @@ const Icons = {
             <path d="M2 12h20" />
         </svg>
     ),
-    clips: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
-            <line x1="7" y1="2" x2="7" y2="22" />
-            <line x1="17" y1="2" x2="17" y2="22" />
-            <line x1="2" y1="12" x2="22" y2="12" />
-            <line x1="2" y1="7" x2="7" y2="7" />
-            <line x1="2" y1="17" x2="7" y2="17" />
-            <line x1="17" y1="17" x2="22" y2="17" />
-            <line x1="17" y1="7" x2="22" y2="7" />
-        </svg>
-    ),
-    eye: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-        </svg>
-    ),
-    eyeOff: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-            <line x1="1" y1="1" x2="23" y2="23" />
-        </svg>
-    ),
-    chevronRight: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="9 18 15 12 9 6" />
-        </svg>
-    ),
-    lock: (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-        </svg>
-    ),
-    unlock: (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-        </svg>
-    ),
-    plus: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-    ),
-    trash: (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-        </svg>
-    ),
 };
 
 // Tool button component
@@ -453,10 +379,6 @@ export default function VideoAnalyzeStone() {
     const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [volume, setVolume] = useState(1);
-    const [layers, setLayers] = useState<TimelineLayer[]>(DEFAULT_LAYERS);
-    const [resizingAnnotation, setResizingAnnotation] = useState<{ id: string; edge: 'start' | 'end' } | null>(null);
-    const [draggingAnnotation, setDraggingAnnotation] = useState<{ id: string; startX: number; originalStartTime: number } | null>(null);
-    const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -858,40 +780,6 @@ export default function VideoAnalyzeStone() {
             const newTime = Math.max(0, Math.min(duration, (percentage * visibleDuration) + timelineScroll));
             seekTo(newTime);
         }
-
-        // Handle annotation resizing
-        if (resizingAnnotation) {
-            setAnnotations(prev => prev.map(ann => {
-                if (ann.id === resizingAnnotation.id) {
-                    if (resizingAnnotation.edge === 'start') {
-                        const newStartTime = Math.max(0, Math.min(newTime, ann.endTime - 0.5));
-                        return { ...ann, startTime: newStartTime };
-                    } else {
-                        const newEndTime = Math.max(ann.startTime + 0.5, Math.min(newTime, duration));
-                        return { ...ann, endTime: newEndTime };
-                    }
-                }
-                return ann;
-            }));
-        }
-
-        // Handle annotation dragging
-        if (draggingAnnotation) {
-            const ann = annotations.find(a => a.id === draggingAnnotation.id);
-            if (ann) {
-                const annDuration = ann.endTime - ann.startTime;
-                const deltaX = e.clientX - draggingAnnotation.startX;
-                const deltaTime = (deltaX / rect.width) * visibleDuration;
-                const newStartTime = Math.max(0, Math.min(duration - annDuration, draggingAnnotation.originalStartTime + deltaTime));
-                const newEndTime = newStartTime + annDuration;
-
-                setAnnotations(prev => prev.map(a =>
-                    a.id === draggingAnnotation.id
-                        ? { ...a, startTime: newStartTime, endTime: newEndTime }
-                        : a
-                ));
-            }
-        }
     };
 
     // Handle mouse up
@@ -899,62 +787,6 @@ export default function VideoAnalyzeStone() {
         setResizingClip(null);
         setDraggingClip(null);
         setIsDraggingPlayhead(false);
-        setResizingAnnotation(null);
-        setDraggingAnnotation(null);
-    };
-
-    // Toggle layer visibility
-    const toggleLayerVisibility = (layerId: string) => {
-        setLayers(prev => prev.map(layer =>
-            layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
-        ));
-    };
-
-    // Toggle layer expanded
-    const toggleLayerExpanded = (layerId: string) => {
-        setLayers(prev => prev.map(layer =>
-            layer.id === layerId ? { ...layer, expanded: !layer.expanded } : layer
-        ));
-    };
-
-    // Handle annotation resize start
-    const handleAnnotationResizeStart = (annotationId: string, edge: 'start' | 'end', e: React.MouseEvent) => {
-        e.stopPropagation();
-        setResizingAnnotation({ id: annotationId, edge });
-    };
-
-    // Handle annotation drag start
-    const handleAnnotationDragStart = (annotationId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        const ann = annotations.find(a => a.id === annotationId);
-        if (ann) {
-            setDraggingAnnotation({
-                id: annotationId,
-                startX: e.clientX,
-                originalStartTime: ann.startTime
-            });
-            setSelectedAnnotationId(annotationId);
-        }
-    };
-
-    // Get layer icon
-    const getLayerIcon = (iconType: string) => {
-        const iconMap: Record<string, React.ReactNode> = {
-            clips: Icons.clips,
-            text: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M4 7V4h16v3" /><path d="M12 4v16" /><path d="M8 20h8" /></svg>,
-            circle: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /></svg>,
-            spotlight: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" /><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83" /></svg>,
-            line: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="19" x2="19" y2="5" /></svg>,
-            connection: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><path d="M8.5 8.5L15.5 15.5" strokeDasharray="3 3" /></svg>,
-            arrow: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>,
-            polygon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" /></svg>,
-        };
-        return iconMap[iconType] || Icons.clips;
-    };
-
-    // Get annotations for a specific layer
-    const getAnnotationsForLayer = (layerType: string) => {
-        return annotations.filter(ann => ann.type === layerType);
     };
 
     // Smooth zoom
@@ -1505,323 +1337,125 @@ export default function VideoAnalyzeStone() {
                             </div>
                         </div>
 
-                        {/* Timeline with Layers */}
+                        {/* Timeline */}
                         <div
-                            className="relative select-none flex"
+                            className="relative px-4 py-4 select-none"
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
                         >
-                            {/* Layer Labels Panel */}
-                            <div className="w-48 bg-[#0f0f15] border-r border-white/5 flex-shrink-0">
-                                {/* Time ruler label */}
-                                <div className="h-8 border-b border-white/5 flex items-center px-3">
-                                    <span className="text-[10px] text-gray-500 font-medium">LAYERS</span>
-                                </div>
-
-                                {/* Layer rows */}
-                                <div className="overflow-y-auto max-h-[300px] custom-scrollbar">
-                                    {layers.map((layer, index) => {
-                                        const itemCount = layer.type === 'clips'
-                                            ? clips.length
-                                            : getAnnotationsForLayer(layer.type).length;
-
-                                        return (
-                                            <motion.div
-                                                key={layer.id}
-                                                className={`group border-b border-white/5 transition-colors ${selectedLayerId === layer.id ? 'bg-white/5' : 'hover:bg-white/[0.02]'
-                                                    }`}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: index * 0.03 }}
-                                                onClick={() => setSelectedLayerId(layer.id === selectedLayerId ? null : layer.id)}
-                                            >
-                                                <div className="h-10 flex items-center px-2 gap-1.5">
-                                                    {/* Expand/Collapse */}
-                                                    <motion.button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleLayerExpanded(layer.id);
-                                                        }}
-                                                        className="p-1 text-gray-500 hover:text-white transition-colors"
-                                                        animate={{ rotate: layer.expanded ? 90 : 0 }}
-                                                    >
-                                                        {Icons.chevronRight}
-                                                    </motion.button>
-
-                                                    {/* Visibility toggle */}
-                                                    <motion.button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleLayerVisibility(layer.id);
-                                                        }}
-                                                        className={`p-1 transition-colors ${layer.visible ? 'text-gray-400 hover:text-white' : 'text-gray-600'
-                                                            }`}
-                                                        whileHover={{ scale: 1.1 }}
-                                                        whileTap={{ scale: 0.9 }}
-                                                    >
-                                                        {layer.visible ? Icons.eye : Icons.eyeOff}
-                                                    </motion.button>
-
-                                                    {/* Layer icon & color */}
-                                                    <div
-                                                        className="w-5 h-5 rounded flex items-center justify-center"
-                                                        style={{ backgroundColor: `${layer.color}30`, color: layer.color }}
-                                                    >
-                                                        {getLayerIcon(layer.icon)}
-                                                    </div>
-
-                                                    {/* Layer name */}
-                                                    <span className={`text-xs font-medium flex-1 truncate ${layer.visible ? 'text-gray-300' : 'text-gray-600'
-                                                        }`}>
-                                                        {layer.name}
-                                                    </span>
-
-                                                    {/* Item count badge */}
-                                                    {itemCount > 0 && (
-                                                        <span
-                                                            className="px-1.5 py-0.5 text-[10px] font-medium rounded"
-                                                            style={{
-                                                                backgroundColor: `${layer.color}20`,
-                                                                color: layer.color
-                                                            }}
-                                                        >
-                                                            {itemCount}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
+                            {/* Time display */}
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-lg text-sm font-mono z-30">
+                                <span className="text-white">{formatTime(currentTime)}</span>
+                                <span className="text-gray-500"> / {formatTime(duration)}</span>
                             </div>
 
-                            {/* Timeline Tracks Panel */}
-                            <div className="flex-1 overflow-hidden">
-                                {/* Time ruler */}
-                                <div className="h-8 border-b border-white/5 relative bg-[#0f0f15]">
-                                    <div className="flex justify-between text-[10px] text-gray-500 h-full items-end pb-1 px-2">
-                                        {Array.from({ length: 11 }, (_, i) => {
-                                            const visibleDuration = duration / zoomLevel;
-                                            const time = timelineScroll + (visibleDuration / 10) * i;
-                                            return (
-                                                <div key={i} className="flex flex-col items-center">
-                                                    <span>{formatTime(time)}</span>
-                                                    <div className="w-px h-2 bg-white/10 mt-0.5" />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                            {/* Time markers */}
+                            <div className="flex justify-between text-[10px] text-gray-600 mb-2 px-1">
+                                {Array.from({ length: 11 }, (_, i) => {
+                                    const visibleDuration = duration / zoomLevel;
+                                    const time = timelineScroll + (visibleDuration / 10) * i;
+                                    return <span key={i}>{formatTime(time)}</span>;
+                                })}
+                            </div>
 
-                                    {/* Time display tooltip */}
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 rounded text-[10px] font-mono text-cyan-400">
-                                        {formatTime(currentTime)}
-                                    </div>
+                            {/* Timeline track */}
+                            <motion.div
+                                ref={timelineRef}
+                                className="relative h-24 bg-[#1a1a24] rounded-xl overflow-hidden cursor-pointer"
+                                onWheel={handleWheel}
+                                onClick={handleTimelineClick}
+                            >
+                                {/* Progress bar background */}
+                                <div className="absolute inset-x-0 top-0 h-1.5 bg-white/5">
+                                    <motion.div
+                                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                                        style={{
+                                            width: `${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}%`
+                                        }}
+                                    />
                                 </div>
 
-                                {/* Tracks container */}
-                                <div
-                                    ref={timelineRef}
-                                    className="overflow-y-auto max-h-[300px] custom-scrollbar bg-[#1a1a24]"
-                                    onWheel={handleWheel}
-                                >
-                                    {layers.map((layer, layerIndex) => {
+                                {/* Clip markers on timeline */}
+                                <AnimatePresence>
+                                    {clips.map((clip) => {
                                         const visibleDuration = duration / zoomLevel;
                                         const visibleStart = timelineScroll;
                                         const visibleEnd = timelineScroll + visibleDuration;
 
-                                        // Get items for this layer
-                                        const layerItems = layer.type === 'clips'
-                                            ? clips.map(clip => ({
-                                                id: clip.id,
-                                                startTime: clip.startTime,
-                                                endTime: clip.endTime,
-                                                duration: clip.duration,
-                                                name: clip.name,
-                                                isClip: true
-                                            }))
-                                            : getAnnotationsForLayer(layer.type).map(ann => ({
-                                                id: ann.id,
-                                                startTime: ann.startTime,
-                                                endTime: ann.endTime,
-                                                duration: ann.endTime - ann.startTime,
-                                                name: ann.text || ann.type,
-                                                isClip: false
-                                            }));
+                                        if (clip.endTime < visibleStart || clip.startTime > visibleEnd) {
+                                            return null;
+                                        }
+
+                                        const leftPercent = ((clip.startTime - timelineScroll) / visibleDuration) * 100;
+                                        const widthPercent = (clip.duration / visibleDuration) * 100;
 
                                         return (
                                             <motion.div
-                                                key={layer.id}
-                                                className={`relative border-b border-white/5 transition-all ${!layer.visible ? 'opacity-30' : ''
-                                                    } ${selectedLayerId === layer.id ? 'bg-white/[0.02]' : ''}`}
+                                                key={clip.id}
+                                                className={`absolute rounded-lg cursor-move overflow-hidden backdrop-blur-sm
+                                                    ${selectedClip === clip.id
+                                                        ? 'bg-cyan-500/30 border-2 border-cyan-400 shadow-lg shadow-cyan-500/20'
+                                                        : 'bg-blue-500/20 border border-blue-400/50 hover:bg-blue-500/30'
+                                                    }`}
                                                 style={{
-                                                    height: layer.expanded ? (layerItems.length > 0 ? '40px' : '40px') : '0px',
-                                                    overflow: 'hidden'
+                                                    left: `${Math.max(0, leftPercent)}%`,
+                                                    width: `${widthPercent}%`,
+                                                    top: '16px',
+                                                    height: 'calc(100% - 24px)',
+                                                    zIndex: selectedClip === clip.id ? 20 : 10
                                                 }}
-                                                animate={{
-                                                    height: layer.expanded ? 40 : 0,
-                                                    opacity: layer.expanded ? 1 : 0
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                exit={{ scale: 0.9, opacity: 0 }}
+                                                whileHover={{ y: -2 }}
+                                                onMouseDown={(e) => {
+                                                    const target = e.target as HTMLElement;
+                                                    if (!target.classList.contains('resize-handle')) {
+                                                        handleClipDragStart(clip.id, e);
+                                                    }
                                                 }}
-                                                transition={{ duration: 0.2 }}
                                             >
-                                                {/* Track background grid lines */}
-                                                <div className="absolute inset-0 flex pointer-events-none">
-                                                    {Array.from({ length: 10 }, (_, i) => (
-                                                        <div
-                                                            key={i}
-                                                            className="flex-1 border-r border-white/[0.03]"
-                                                        />
-                                                    ))}
+                                                {/* Left resize handle */}
+                                                <div
+                                                    className="resize-handle absolute left-0 top-0 w-2 h-full bg-gradient-to-r from-white/30 to-transparent cursor-ew-resize hover:from-white/50 transition-colors"
+                                                    onMouseDown={(e) => handleResizeStart(clip.id, 'start', e)}
+                                                />
+
+                                                <div className="flex items-center h-full px-3 pointer-events-none">
+                                                    <span className="text-xs font-medium truncate text-white/80">{clip.name}</span>
                                                 </div>
 
-                                                {/* Items on track */}
-                                                <AnimatePresence>
-                                                    {layer.visible && layerItems.map((item) => {
-                                                        if (item.endTime < visibleStart || item.startTime > visibleEnd) {
-                                                            return null;
-                                                        }
+                                                {/* Resize icon in corner */}
+                                                <div className="absolute bottom-1 right-1 text-white/30">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M22 22H20V20H22V22ZM22 18H20V16H22V18ZM18 22H16V20H18V22ZM18 18H16V16H18V18ZM14 22H12V20H14V22ZM22 14H20V12H22V14Z" />
+                                                    </svg>
+                                                </div>
 
-                                                        const leftPercent = ((item.startTime - timelineScroll) / visibleDuration) * 100;
-                                                        const widthPercent = (item.duration / visibleDuration) * 100;
-                                                        const isSelected = item.isClip
-                                                            ? selectedClip === item.id
-                                                            : selectedAnnotationId === item.id;
-
-                                                        return (
-                                                            <motion.div
-                                                                key={item.id}
-                                                                className={`absolute top-1 bottom-1 rounded cursor-move group overflow-hidden ${isSelected
-                                                                    ? 'ring-2 ring-white/50 shadow-lg'
-                                                                    : 'hover:ring-1 hover:ring-white/30'
-                                                                    }`}
-                                                                style={{
-                                                                    left: `${Math.max(0, leftPercent)}%`,
-                                                                    width: `${Math.max(2, widthPercent)}%`,
-                                                                    backgroundColor: `${layer.color}40`,
-                                                                    borderLeft: `2px solid ${layer.color}`,
-                                                                    zIndex: isSelected ? 20 : 10
-                                                                }}
-                                                                initial={{ scale: 0.9, opacity: 0 }}
-                                                                animate={{ scale: 1, opacity: 1 }}
-                                                                exit={{ scale: 0.9, opacity: 0 }}
-                                                                whileHover={{ y: -1 }}
-                                                                onMouseDown={(e) => {
-                                                                    const target = e.target as HTMLElement;
-                                                                    if (!target.classList.contains('resize-handle')) {
-                                                                        if (item.isClip) {
-                                                                            handleClipDragStart(item.id, e);
-                                                                            setSelectedClip(item.id);
-                                                                        } else {
-                                                                            handleAnnotationDragStart(item.id, e);
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    if (item.isClip) {
-                                                                        setSelectedClip(item.id);
-                                                                        seekTo(item.startTime);
-                                                                    } else {
-                                                                        setSelectedAnnotationId(item.id);
-                                                                        seekTo(item.startTime);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {/* Left resize handle */}
-                                                                <div
-                                                                    className="resize-handle absolute left-0 top-0 w-1.5 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                    style={{ backgroundColor: layer.color }}
-                                                                    onMouseDown={(e) => {
-                                                                        if (item.isClip) {
-                                                                            handleResizeStart(item.id, 'start', e);
-                                                                        } else {
-                                                                            handleAnnotationResizeStart(item.id, 'start', e);
-                                                                        }
-                                                                    }}
-                                                                />
-
-                                                                {/* Item content */}
-                                                                <div className="flex items-center h-full px-2 pointer-events-none overflow-hidden">
-                                                                    <div
-                                                                        className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 mr-1.5"
-                                                                        style={{ color: layer.color }}
-                                                                    >
-                                                                        {getLayerIcon(layer.icon)}
-                                                                    </div>
-                                                                    <span
-                                                                        className="text-[10px] font-medium truncate"
-                                                                        style={{ color: layer.color }}
-                                                                    >
-                                                                        {item.name}
-                                                                    </span>
-                                                                </div>
-
-                                                                {/* Right resize handle */}
-                                                                <div
-                                                                    className="resize-handle absolute right-0 top-0 w-1.5 h-full cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                    style={{ backgroundColor: layer.color }}
-                                                                    onMouseDown={(e) => {
-                                                                        if (item.isClip) {
-                                                                            handleResizeStart(item.id, 'end', e);
-                                                                        } else {
-                                                                            handleAnnotationResizeStart(item.id, 'end', e);
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            </motion.div>
-                                                        );
-                                                    })}
-                                                </AnimatePresence>
-
-                                                {/* Playhead line for each track */}
+                                                {/* Right resize handle */}
                                                 <div
-                                                    className="absolute top-0 bottom-0 w-0.5 bg-white/80 pointer-events-none z-30"
-                                                    style={{
-                                                        left: `${((currentTime - timelineScroll) / visibleDuration) * 100}%`,
-                                                        display: currentTime >= visibleStart && currentTime <= visibleEnd ? 'block' : 'none'
-                                                    }}
+                                                    className="resize-handle absolute right-0 top-0 w-2 h-full bg-gradient-to-l from-white/30 to-transparent cursor-ew-resize hover:from-white/50 transition-colors"
+                                                    onMouseDown={(e) => handleResizeStart(clip.id, 'end', e)}
                                                 />
                                             </motion.div>
                                         );
                                     })}
-                                </div>
+                                </AnimatePresence>
 
-                                {/* Main Playhead */}
-                                <div
-                                    className="absolute top-8 bottom-0 w-0.5 bg-white z-40 pointer-events-none"
+                                {/* Playhead */}
+                                <motion.div
+                                    className="absolute top-0 bottom-0 w-0.5 bg-white z-30 cursor-ew-resize"
                                     style={{
-                                        left: `calc(192px + ${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}% * (100% - 192px) / 100%)`,
+                                        left: `${((currentTime - timelineScroll) / (duration / zoomLevel)) * 100}%`,
                                         display: currentTime >= timelineScroll && currentTime <= timelineScroll + (duration / zoomLevel) ? 'block' : 'none'
                                     }}
-                                >
-                                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-sm rotate-45 shadow-lg" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Timeline scrubber bar */}
-                        <div
-                            className="h-6 bg-[#0f0f15] border-t border-white/5 flex items-center px-4 cursor-pointer"
-                            onClick={(e) => {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                const x = e.clientX - rect.left;
-                                const percentage = x / rect.width;
-                                const newTime = percentage * duration;
-                                seekTo(Math.max(0, Math.min(duration, newTime)));
-                            }}
-                        >
-                            <div className="flex-1 h-1 bg-white/10 rounded-full relative overflow-hidden">
-                                <motion.div
-                                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
-                                    style={{ width: `${(currentTime / duration) * 100}%` }}
-                                />
-                                <motion.div
-                                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg cursor-grab active:cursor-grabbing"
-                                    style={{ left: `calc(${(currentTime / duration) * 100}% - 6px)` }}
                                     onMouseDown={() => setIsDraggingPlayhead(true)}
-                                    whileHover={{ scale: 1.3 }}
-                                />
-                            </div>
+                                >
+                                    {/* Playhead handle */}
+                                    <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-sm rotate-45 shadow-lg" />
+                                </motion.div>
+                            </motion.div>
                         </div>
                     </motion.div>
                 )}
