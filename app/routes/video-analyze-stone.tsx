@@ -1373,26 +1373,41 @@ export default function VideoAnalyzeStone() {
             // Include annotations that are visible or within fade margin
             return currentTime >= ann.startTime - FADE_MARGIN && currentTime <= ann.endTime + FADE_MARGIN;
         }).map(ann => {
+            // Check if this annotation is currently being recorded
+            const isBeingRecorded = isRecordingMovement && recordingAnnotationId === ann.id;
+
             let targetOpacity = ann.opacity || 1;
 
-            // Calculate fade with smooth easing
-            if (currentTime < ann.startTime) {
-                // Not yet visible
-                targetOpacity = 0;
-            } else if (currentTime < ann.startTime + FADE_DURATION) {
-                // Fading in - use smootherstep for smooth entrance
-                const fadeProgress = (currentTime - ann.startTime) / FADE_DURATION;
-                targetOpacity *= smootherstep(fadeProgress);
-            } else if (currentTime > ann.endTime - FADE_DURATION) {
-                // Fading out - use smootherstep for smooth exit
-                const fadeProgress = (ann.endTime - currentTime) / FADE_DURATION;
-                targetOpacity *= smootherstep(Math.max(0, fadeProgress));
+            // Calculate fade with smooth easing (but not during recording)
+            if (!isBeingRecorded) {
+                if (currentTime < ann.startTime) {
+                    // Not yet visible
+                    targetOpacity = 0;
+                } else if (currentTime < ann.startTime + FADE_DURATION) {
+                    // Fading in - use smootherstep for smooth entrance
+                    const fadeProgress = (currentTime - ann.startTime) / FADE_DURATION;
+                    targetOpacity *= smootherstep(fadeProgress);
+                } else if (currentTime > ann.endTime - FADE_DURATION) {
+                    // Fading out - use smootherstep for smooth exit
+                    const fadeProgress = (ann.endTime - currentTime) / FADE_DURATION;
+                    targetOpacity *= smootherstep(Math.max(0, fadeProgress));
+                }
             }
 
             // Clamp opacity
             targetOpacity = Math.max(0, Math.min(1, targetOpacity));
 
-            // Get target position from keyframe interpolation
+            // If being recorded, use raw position directly (no interpolation or smoothing)
+            if (isBeingRecorded) {
+                // Clear smoothed position so it resets after recording
+                smoothedPositionsRef.current.delete(ann.id);
+                return {
+                    ...ann,
+                    opacity: targetOpacity
+                };
+            }
+
+            // Get target position from keyframe interpolation (only when not recording)
             let targetX = ann.x;
             let targetY = ann.y;
             let targetRotation = ann.rotation || 0;
