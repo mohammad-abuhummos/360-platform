@@ -1,0 +1,83 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - SystemRoleAssignments",
+    "_postman_id": "2a9732e3-f8b8-48a1-ac43-3f51025613db",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the SystemRoleAssignments tag."
+  },
+  "item": [
+    {
+      "name": "post_api_system-roles_assignments_assign",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/system-roles/assignments/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "system-roles",
+            "assignments",
+            "assign"
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_system-roles_assignments_remove",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/system-roles/assignments/remove",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "system-roles",
+            "assignments",
+            "remove"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

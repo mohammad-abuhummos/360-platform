@@ -1,0 +1,579 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - MatchStats",
+    "_postman_id": "093c5ea2-e853-418c-9f65-19f4df9adb5d",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the MatchStats tag."
+  },
+  "item": [
+    {
+      "name": "get_api_matches_matchId_stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_cards_red",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/cards/red",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "cards",
+            "red"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_cards_yellow",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/cards/yellow",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "cards",
+            "yellow"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_corners",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/corners",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "corners"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_duels",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/duels",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "duels"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_free-kicks",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/free-kicks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "free-kicks"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_goals",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/goals",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "goals"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_offsides",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/offsides",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "offsides"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_passes",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/passes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "passes"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_penalties",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/penalties",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "penalties"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_saves",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/saves",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "saves"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_shots",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/shots",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "shots"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_shots_on-goal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/shots/on-goal",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "shots",
+            "on-goal"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_matches_matchId_stats_substitutions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/matches/{matchId}/stats/substitutions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "matches",
+            ":matchId",
+            "stats",
+            "substitutions"
+          ],
+          "variable": [
+            {
+              "key": "matchId",
+              "value": "",
+              "description": "Path parameter matchId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

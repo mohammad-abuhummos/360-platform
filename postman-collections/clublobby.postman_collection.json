@@ -1,0 +1,341 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - ClubLobby",
+    "_postman_id": "6a93f865-c59c-4066-ad7c-c7e48f80c84c",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the ClubLobby tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_clubs_clubId_lobby_forms_formId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms/{formId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms",
+            ":formId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "formId",
+              "value": "",
+              "description": "Path parameter formId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_lobby",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_lobby_forms",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_lobby_forms_formId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms/{formId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms",
+            ":formId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "formId",
+              "value": "",
+              "description": "Path parameter formId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_lobby_forms_formId_submissions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms/{formId}/submissions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms",
+            ":formId",
+            "submissions"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "formId",
+              "value": "",
+              "description": "Path parameter formId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_lobby_forms_formId_submissions_mine",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms/{formId}/submissions/mine",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms",
+            ":formId",
+            "submissions",
+            "mine"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "formId",
+              "value": "",
+              "description": "Path parameter formId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_lobby_forms",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_lobby_forms_formId_submissions",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms/{formId}/submissions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms",
+            ":formId",
+            "submissions"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "formId",
+              "value": "",
+              "description": "Path parameter formId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_clubs_clubId_lobby_forms_formId",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/lobby/forms/{formId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "lobby",
+            "forms",
+            ":formId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "formId",
+              "value": "",
+              "description": "Path parameter formId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

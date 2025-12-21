@@ -1,0 +1,119 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - VeoVideos",
+    "_postman_id": "854c14e6-5343-499c-b88b-8e71e3b5ffa4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the VeoVideos tag."
+  },
+  "item": [
+    {
+      "name": "get_api_clubs_clubId_veo_videos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/veo/videos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "veo",
+            "videos"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_veo_videos_videoId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/veo/videos/{videoId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "veo",
+            "videos",
+            ":videoId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "videoId",
+              "value": "",
+              "description": "Path parameter videoId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_veo_videos_import",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/veo/videos/import",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "veo",
+            "videos",
+            "import"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

@@ -1,0 +1,230 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - ClubMemberRoles",
+    "_postman_id": "4561fa6c-e1ea-43bc-84bc-000a7ddcda7e",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the ClubMemberRoles tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_clubs_clubId_members_userId_roles_domainRoleId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/roles/{domainRoleId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "roles",
+            ":domainRoleId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            },
+            {
+              "key": "domainRoleId",
+              "value": "",
+              "description": "Path parameter domainRoleId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_members_userId_roles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "patch_api_clubs_clubId_members_userId_roles",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_members_userId_roles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_clubs_clubId_members_userId_roles",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

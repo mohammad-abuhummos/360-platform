@@ -1,0 +1,211 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - DomainRoleFeatures",
+    "_postman_id": "6f4a0ccc-8eb0-422b-94f4-96ca77bd4733",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the DomainRoleFeatures tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_domain-role-features_roleId_features_featureId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-role-features/{roleId}/features/{featureId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-role-features",
+            ":roleId",
+            "features",
+            ":featureId"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            },
+            {
+              "key": "featureId",
+              "value": "",
+              "description": "Path parameter featureId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_domain-role-features",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-role-features",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-role-features"
+          ],
+          "query": [
+            {
+              "key": "clubId",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_domain-role-features_roleId_features",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-role-features/{roleId}/features",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-role-features",
+            ":roleId",
+            "features"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "patch_api_domain-role-features_roleId_features",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-role-features/{roleId}/features",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-role-features",
+            ":roleId",
+            "features"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_domain-role-features_roleId_features_featureId",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-role-features/{roleId}/features/{featureId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-role-features",
+            ":roleId",
+            "features",
+            ":featureId"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            },
+            {
+              "key": "featureId",
+              "value": "",
+              "description": "Path parameter featureId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_domain-role-features_roleId_features",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-role-features/{roleId}/features",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-role-features",
+            ":roleId",
+            "features"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

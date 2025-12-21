@@ -554,6 +554,9 @@ export default function VideoAnalyzeStone() {
     const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
     const [propertiesPanelItem, setPropertiesPanelItem] = useState<{ type: 'clip' | 'annotation'; id: string } | null>(null);
 
+    // Track if a drag operation occurred (to prevent click after drag)
+    const wasDraggingRef = useRef(false);
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const timelineRef = useRef<HTMLDivElement>(null);
@@ -1489,6 +1492,7 @@ export default function VideoAnalyzeStone() {
         e.stopPropagation();
         const clip = clips.find(c => c.id === clipId);
         if (clip) {
+            wasDraggingRef.current = false; // Reset at start, will be set true if actual drag happens
             setDraggingClip({
                 id: clipId,
                 startX: e.clientX,
@@ -1508,6 +1512,7 @@ export default function VideoAnalyzeStone() {
         const newTime = (percentage * visibleDuration) + timelineScroll;
 
         if (resizingClip) {
+            wasDraggingRef.current = true; // Mark as dragging during resize
             setClips(prev => prev.map(clip => {
                 if (clip.id === resizingClip.id) {
                     if (resizingClip.edge === 'start') {
@@ -1534,6 +1539,10 @@ export default function VideoAnalyzeStone() {
             const clip = clips.find(c => c.id === draggingClip.id);
             if (clip) {
                 const deltaX = e.clientX - draggingClip.startX;
+                // Mark as dragged if moved more than 3 pixels
+                if (Math.abs(deltaX) > 3) {
+                    wasDraggingRef.current = true;
+                }
                 const deltaTime = (deltaX / rect.width) * visibleDuration;
                 const newStartTime = Math.max(0, Math.min(duration - clip.duration, draggingClip.originalStartTime + deltaTime));
                 const newEndTime = newStartTime + clip.duration;
@@ -1553,6 +1562,7 @@ export default function VideoAnalyzeStone() {
 
         // Handle annotation resizing
         if (resizingAnnotation) {
+            wasDraggingRef.current = true; // Mark as dragging during resize
             setAnnotations(prev => prev.map(ann => {
                 if (ann.id === resizingAnnotation.id) {
                     if (resizingAnnotation.edge === 'start') {
@@ -1573,6 +1583,10 @@ export default function VideoAnalyzeStone() {
             if (ann) {
                 const annDuration = ann.endTime - ann.startTime;
                 const deltaX = e.clientX - draggingAnnotation.startX;
+                // Mark as dragged if moved more than 3 pixels
+                if (Math.abs(deltaX) > 3) {
+                    wasDraggingRef.current = true;
+                }
                 const deltaTime = (deltaX / rect.width) * visibleDuration;
                 const newStartTime = Math.max(0, Math.min(duration - annDuration, draggingAnnotation.originalStartTime + deltaTime));
                 const newEndTime = newStartTime + annDuration;
@@ -1620,6 +1634,7 @@ export default function VideoAnalyzeStone() {
         e.stopPropagation();
         const ann = annotations.find(a => a.id === annotationId);
         if (ann) {
+            wasDraggingRef.current = false; // Reset at start, will be set true if actual drag happens
             setDraggingAnnotation({
                 id: annotationId,
                 startX: e.clientX,
@@ -3348,6 +3363,11 @@ export default function VideoAnalyzeStone() {
                                                                 }}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
+                                                                    // Only open properties panel if it was a click, not a drag
+                                                                    if (wasDraggingRef.current) {
+                                                                        wasDraggingRef.current = false; // Reset for next interaction
+                                                                        return;
+                                                                    }
                                                                     if (item.isClip) {
                                                                         openPropertiesPanel('clip', item.id);
                                                                         seekTo(item.startTime);

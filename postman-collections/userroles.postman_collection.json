@@ -1,0 +1,123 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - UserRoles",
+    "_postman_id": "884cd72a-1fcf-4f57-9152-a91a7712b863",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the UserRoles tag."
+  },
+  "item": [
+    {
+      "name": "get_api_users_userId_roles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{userId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":userId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "patch_api_users_userId_roles",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{userId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":userId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_users_userId_roles",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{userId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            ":userId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

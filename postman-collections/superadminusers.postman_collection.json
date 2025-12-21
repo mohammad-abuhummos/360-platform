@@ -1,0 +1,472 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - SuperAdminUsers",
+    "_postman_id": "8014be33-9dbf-4b40-a25f-8bb22e65b2e6",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the SuperAdminUsers tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_super-admin_users_id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_super-admin_users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users"
+          ],
+          "query": [
+            {
+              "key": "search",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "role",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "Page",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "PageSize",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_super-admin_users_id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_super-admin_users_roles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            "roles"
+          ]
+        }
+      }
+    },
+    {
+      "name": "patch_api_super-admin_users_id",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_super-admin_users",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users"
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_super-admin_users_id_confirm-email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}/confirm-email",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id",
+            "confirm-email"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_super-admin_users_id_lock",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}/lock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id",
+            "lock"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_super-admin_users_id_reset-password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}/reset-password",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id",
+            "reset-password"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_super-admin_users_id_roles:assign",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}/roles:assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id",
+            "roles:assign"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_super-admin_users_id_roles:remove",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}/roles:remove",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id",
+            "roles:remove"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_super-admin_users_id_unlock",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}/unlock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id",
+            "unlock"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_super-admin_users_id",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/users/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "users",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

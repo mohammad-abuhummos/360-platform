@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - Formations",
+    "_postman_id": "15c784cc-72a8-45a6-9ce5-4c3c9242cc72",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the Formations tag."
+  },
+  "item": [
+    {
+      "name": "get_api_groups_groupId_formations",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/groups/{groupId}/formations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            ":groupId",
+            "formations"
+          ],
+          "variable": [
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_groups_groupId_formations_id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/groups/{groupId}/formations/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            ":groupId",
+            "formations",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            },
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_groups_groupId_formations",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/groups/{groupId}/formations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            ":groupId",
+            "formations"
+          ],
+          "variable": [
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_groups_groupId_formations_from-template_templateId",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/groups/{groupId}/formations/from-template/{templateId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            ":groupId",
+            "formations",
+            "from-template",
+            ":templateId"
+          ],
+          "variable": [
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            },
+            {
+              "key": "templateId",
+              "value": "",
+              "description": "Path parameter templateId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

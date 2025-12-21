@@ -1,0 +1,716 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - ClubUserAssignments",
+    "_postman_id": "a3f82f11-3456-4c06-8816-e860a0d1d4c9",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the ClubUserAssignments tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_user-assignments_club_clubId_user_userId_roles_domainRoleId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/club/{clubId}/user/{userId}/roles/{domainRoleId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "club",
+            ":clubId",
+            "user",
+            ":userId",
+            "roles",
+            ":domainRoleId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            },
+            {
+              "key": "domainRoleId",
+              "value": "",
+              "description": "Path parameter domainRoleId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_api_user-assignments_clubs_clubId_groups_groupId_roles_domainRoleId_users_userId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/groups/{groupId}/roles/{domainRoleId}/users/{userId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "groups",
+            ":groupId",
+            "roles",
+            ":domainRoleId",
+            "users",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            },
+            {
+              "key": "domainRoleId",
+              "value": "",
+              "description": "Path parameter domainRoleId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_api_user-assignments_clubs_clubId_groups_groupId_users_userId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/groups/{groupId}/users/{userId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "groups",
+            ":groupId",
+            "users",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_api_user-assignments_clubs_clubId_sports_sportId_roles_domainRoleId_users_userId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/sports/{sportId}/roles/{domainRoleId}/users/{userId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "sports",
+            ":sportId",
+            "roles",
+            ":domainRoleId",
+            "users",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "sportId",
+              "value": "",
+              "description": "Path parameter sportId"
+            },
+            {
+              "key": "domainRoleId",
+              "value": "",
+              "description": "Path parameter domainRoleId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_api_user-assignments_clubs_clubId_sports_sportId_users_userId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/sports/{sportId}/users/{userId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "sports",
+            ":sportId",
+            "users",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "sportId",
+              "value": "",
+              "description": "Path parameter sportId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_api_user-assignments_clubs_clubId_teams_teamId_roles_domainRoleId_users_userId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/teams/{teamId}/roles/{domainRoleId}/users/{userId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "teams",
+            ":teamId",
+            "roles",
+            ":domainRoleId",
+            "users",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "teamId",
+              "value": "",
+              "description": "Path parameter teamId"
+            },
+            {
+              "key": "domainRoleId",
+              "value": "",
+              "description": "Path parameter domainRoleId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "delete_api_user-assignments_clubs_clubId_teams_teamId_users_userId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/teams/{teamId}/users/{userId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "teams",
+            ":teamId",
+            "users",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "teamId",
+              "value": "",
+              "description": "Path parameter teamId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_user-assignments_club_clubId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/club/{clubId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "club",
+            ":clubId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_user-assignments_clubs_clubId_assignment-tree",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/assignment-tree",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "assignment-tree"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_user-assignments_clubs_clubId_assignment-tree_me",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/assignment-tree/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "assignment-tree",
+            "me"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_user-assignments_club",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/club",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "club"
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_user-assignments_clubs_clubId_groups_groupId",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/groups/{groupId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "groups",
+            ":groupId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_user-assignments_clubs_clubId_groups_groupId_roles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/groups/{groupId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "groups",
+            ":groupId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_user-assignments_clubs_clubId_sports_sportId",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/sports/{sportId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "sports",
+            ":sportId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "sportId",
+              "value": "",
+              "description": "Path parameter sportId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_user-assignments_clubs_clubId_sports_sportId_roles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/sports/{sportId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "sports",
+            ":sportId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "sportId",
+              "value": "",
+              "description": "Path parameter sportId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_user-assignments_clubs_clubId_teams_teamId",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/teams/{teamId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "teams",
+            ":teamId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "teamId",
+              "value": "",
+              "description": "Path parameter teamId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_user-assignments_clubs_clubId_teams_teamId_roles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/user-assignments/clubs/{clubId}/teams/{teamId}/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "user-assignments",
+            "clubs",
+            ":clubId",
+            "teams",
+            ":teamId",
+            "roles"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "teamId",
+              "value": "",
+              "description": "Path parameter teamId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

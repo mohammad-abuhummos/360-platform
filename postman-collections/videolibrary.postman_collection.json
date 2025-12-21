@@ -1,0 +1,274 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - VideoLibrary",
+    "_postman_id": "17e7b23e-8e42-43f6-9892-423ede26a6e1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the VideoLibrary tag."
+  },
+  "item": [
+    {
+      "name": "get_api_clubs_clubId_videos_library",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/library",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "library"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ],
+          "query": [
+            {
+              "key": "sportId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "groupId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "teamId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "visibility",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "search",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_videos_library_videoId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/library/{videoId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "library",
+            ":videoId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "videoId",
+              "value": "",
+              "description": "Path parameter videoId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_videos_library_videoId_clips",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/library/{videoId}/clips",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "library",
+            ":videoId",
+            "clips"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "videoId",
+              "value": "",
+              "description": "Path parameter videoId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_videos_library",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/library",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "library"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_videos_library_videoId_clips",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/library/{videoId}/clips",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "library",
+            ":videoId",
+            "clips"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "videoId",
+              "value": "",
+              "description": "Path parameter videoId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_clubs_clubId_videos_library_videoId",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/library/{videoId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "library",
+            ":videoId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "videoId",
+              "value": "",
+              "description": "Path parameter videoId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

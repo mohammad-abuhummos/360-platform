@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - SystemRoles",
+    "_postman_id": "1d62aac3-a075-455b-9de1-55d9661493d4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the SystemRoles tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_system-roles_name",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/system-roles/{name}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "system-roles",
+            ":name"
+          ],
+          "variable": [
+            {
+              "key": "name",
+              "value": "",
+              "description": "Path parameter name"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_system-roles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/system-roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "system-roles"
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_system-roles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/system-roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "system-roles"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - ClubMembers",
+    "_postman_id": "bfc0331e-d8e9-4a20-bee6-bf67cf6ec434",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the ClubMembers tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_clubs_clubId_members_userId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_members",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_members_audit",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/audit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            "audit"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_members_userId_profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/profile",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "profile"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_members_userId_approve",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/approve",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "approve"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_members_userId_reject",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/reject",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "reject"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

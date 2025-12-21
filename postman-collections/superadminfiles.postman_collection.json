@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - SuperAdminFiles",
+    "_postman_id": "9840e2e0-c829-40d6-856f-43a6eb39bdcc",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the SuperAdminFiles tag."
+  },
+  "item": [
+    {
+      "name": "get_api_super-admin_files",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/super-admin/files",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "super-admin",
+            "files"
+          ],
+          "query": [
+            {
+              "key": "TenantId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "ClubId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "SportId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "GroupId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "OwnerId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "CreatedByUserId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "OwnerType",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "ResourceType",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "Audience",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "Status",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "VariantType",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "Search",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "Page",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "PageSize",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

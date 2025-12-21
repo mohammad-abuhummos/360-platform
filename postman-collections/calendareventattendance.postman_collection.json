@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - CalendarEventAttendance",
+    "_postman_id": "9f788aa4-7da6-4d9b-8ad4-af2c7a12ceef",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the CalendarEventAttendance tag."
+  },
+  "item": [
+    {
+      "name": "get_api_clubs_clubId_calendar_events_eventId_attendance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/calendar/events/{eventId}/attendance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "calendar",
+            "events",
+            ":eventId",
+            "attendance"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "eventId",
+              "value": "",
+              "description": "Path parameter eventId"
+            }
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_users_userId_attendance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/users/{userId}/attendance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "users",
+            ":userId",
+            "attendance"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "take",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_calendar_events_eventId_attendance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/calendar/events/{eventId}/attendance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "calendar",
+            "events",
+            ":eventId",
+            "attendance"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "eventId",
+              "value": "",
+              "description": "Path parameter eventId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

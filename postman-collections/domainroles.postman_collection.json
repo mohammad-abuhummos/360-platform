@@ -1,0 +1,216 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - DomainRoles",
+    "_postman_id": "c0f1effd-bec5-4963-95d5-5b804f2a6ea4",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the DomainRoles tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_domain-roles_id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-roles/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-roles",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_domain-roles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-roles"
+          ],
+          "query": [
+            {
+              "key": "clubId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "onlyActive",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "includeTemplates",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_domain-roles_id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-roles/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-roles",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_domain-roles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-roles"
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_domain-roles_defaults_sync",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-roles/defaults/sync",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-roles",
+            "defaults",
+            "sync"
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_domain-roles_id_defaults:restore",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-roles/{id}/defaults:restore",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-roles",
+            ":id",
+            "defaults:restore"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_domain-roles_id",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/domain-roles/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "domain-roles",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

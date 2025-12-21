@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - VideoPlaylists",
+    "_postman_id": "15d2f52c-1dc9-4869-9d7d-0120e5c94376",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the VideoPlaylists tag."
+  },
+  "item": [
+    {
+      "name": "get_api_clubs_clubId_videos_playlists",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/playlists",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "playlists"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ],
+          "query": [
+            {
+              "key": "sportId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "groupId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "visibility",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "search",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_videos_playlists",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/videos/playlists",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "videos",
+            "playlists"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

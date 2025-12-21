@@ -1,0 +1,104 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - ClubInvitations",
+    "_postman_id": "0a93ca0b-a343-45e9-be91-73e556121894",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the ClubInvitations tag."
+  },
+  "item": [
+    {
+      "name": "get_api_clubs_invites_verify_inviteCode",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/invites/verify/{inviteCode}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            "invites",
+            "verify",
+            ":inviteCode"
+          ],
+          "variable": [
+            {
+              "key": "inviteCode",
+              "value": "",
+              "description": "Path parameter inviteCode"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_invites_clubId_regenerate",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/invites/{clubId}/regenerate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            "invites",
+            ":clubId",
+            "regenerate"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_invites_join",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/invites/join",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            "invites",
+            "join"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

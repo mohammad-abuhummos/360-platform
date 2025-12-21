@@ -1,0 +1,203 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - SystemRoleFeatures",
+    "_postman_id": "12431853-b351-459e-9e63-44dbe7011d3c",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the SystemRoleFeatures tag."
+  },
+  "item": [
+    {
+      "name": "get_api_role-features",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/role-features",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "role-features"
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_role-features_roleId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/role-features/{roleId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "role-features",
+            ":roleId"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "patch_api_role-features_roleId_replace",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/role-features/{roleId}/replace",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "role-features",
+            ":roleId",
+            "replace"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_role-features_assign",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/role-features/assign",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "role-features",
+            "assign"
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_role-features_remove",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/role-features/remove",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "role-features",
+            "remove"
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_role-features_roleId_replace",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/role-features/{roleId}/replace",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "role-features",
+            ":roleId",
+            "replace"
+          ],
+          "variable": [
+            {
+              "key": "roleId",
+              "value": "",
+              "description": "Path parameter roleId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

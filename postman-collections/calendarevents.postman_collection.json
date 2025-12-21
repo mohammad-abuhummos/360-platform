@@ -1,0 +1,429 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - CalendarEvents",
+    "_postman_id": "f3d454ed-7696-46b1-9df3-b7b19364c477",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the CalendarEvents tag."
+  },
+  "item": [
+    {
+      "name": "delete_api_clubs_clubId_calendar_events_eventId",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/calendar/events/{eventId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "calendar",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "eventId",
+              "value": "",
+              "description": "Path parameter eventId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_calendar_me_events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/calendar/me/events",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "calendar",
+            "me",
+            "events"
+          ],
+          "query": [
+            {
+              "key": "startUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "endUtc",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_calendar_events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/calendar/events",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "calendar",
+            "events"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ],
+          "query": [
+            {
+              "key": "startUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "endUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "resourceId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "eventType",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "ownerType",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "ownerId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "includeChildren",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_calendar_events_eventId",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/calendar/events/{eventId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "calendar",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "eventId",
+              "value": "",
+              "description": "Path parameter eventId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_groups_groupId_calendar_events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/groups/{groupId}/calendar/events",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "groups",
+            ":groupId",
+            "calendar",
+            "events"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            }
+          ],
+          "query": [
+            {
+              "key": "startUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "endUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "resourceId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "eventType",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_members_userId_calendar_events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/members/{userId}/calendar/events",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "members",
+            ":userId",
+            "calendar",
+            "events"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Path parameter userId"
+            }
+          ],
+          "query": [
+            {
+              "key": "startUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "endUtc",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_clubs_clubId_sports_sportId_calendar_events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/sports/{sportId}/calendar/events",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "sports",
+            ":sportId",
+            "calendar",
+            "events"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "sportId",
+              "value": "",
+              "description": "Path parameter sportId"
+            }
+          ],
+          "query": [
+            {
+              "key": "startUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "endUtc",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "resourceId",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "eventType",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "includeGroups",
+              "value": "",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_clubs_clubId_calendar_events",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/calendar/events",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "calendar",
+            "events"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "put_api_clubs_clubId_calendar_events_eventId",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/clubs/{clubId}/calendar/events/{eventId}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "clubs",
+            ":clubId",
+            "calendar",
+            "events",
+            ":eventId"
+          ],
+          "variable": [
+            {
+              "key": "clubId",
+              "value": "",
+              "description": "Path parameter clubId"
+            },
+            {
+              "key": "eventId",
+              "value": "",
+              "description": "Path parameter eventId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}

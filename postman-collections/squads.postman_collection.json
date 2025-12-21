@@ -1,0 +1,115 @@
+{
+  "info": {
+    "name": "SportsPlatform.Api - Squads",
+    "_postman_id": "52d842b0-efdf-46ea-a546-2e29c63e56fa",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auto-generated from swagger.json for the Squads tag."
+  },
+  "item": [
+    {
+      "name": "get_api_groups_groupId_squads",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/groups/{groupId}/squads",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            ":groupId",
+            "squads"
+          ],
+          "variable": [
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_api_groups_groupId_squads_id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/groups/{groupId}/squads/{id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            ":groupId",
+            "squads",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            },
+            {
+              "key": "id",
+              "value": "",
+              "description": "Path parameter id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "post_api_groups_groupId_squads",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/groups/{groupId}/squads",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "groups",
+            ":groupId",
+            "squads"
+          ],
+          "variable": [
+            {
+              "key": "groupId",
+              "value": "",
+              "description": "Path parameter groupId"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "{{baseUrl}}",
+      "description": "Set this to your API base URL when importing into Postman."
+    }
+  ]
+}
