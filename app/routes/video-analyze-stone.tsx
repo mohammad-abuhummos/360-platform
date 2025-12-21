@@ -554,6 +554,15 @@ export default function VideoAnalyzeStone() {
     const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
     const [propertiesPanelItem, setPropertiesPanelItem] = useState<{ type: 'clip' | 'annotation'; id: string } | null>(null);
 
+    // Context Menu state
+    const [contextMenu, setContextMenu] = useState<{
+        show: boolean;
+        x: number;
+        y: number;
+        type: 'clip' | 'annotation';
+        id: string;
+    } | null>(null);
+
     // Track if a drag operation occurred (to prevent click after drag)
     const wasDraggingRef = useRef(false);
 
@@ -1681,6 +1690,82 @@ export default function VideoAnalyzeStone() {
         setPropertiesPanelItem(null);
     }, []);
 
+    // Open context menu for timeline item
+    const openContextMenu = useCallback((e: React.MouseEvent, type: 'clip' | 'annotation', id: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+            show: true,
+            x: e.clientX,
+            y: e.clientY,
+            type,
+            id
+        });
+        // Select the item
+        if (type === 'clip') {
+            setSelectedClip(id);
+        } else {
+            setSelectedAnnotationId(id);
+        }
+    }, []);
+
+    // Close context menu
+    const closeContextMenu = useCallback(() => {
+        setContextMenu(null);
+    }, []);
+
+    // Handle context menu edit action
+    const handleContextMenuEdit = useCallback(() => {
+        if (contextMenu) {
+            openPropertiesPanel(contextMenu.type, contextMenu.id);
+            closeContextMenu();
+        }
+    }, [contextMenu, openPropertiesPanel, closeContextMenu]);
+
+    // Handle context menu delete action
+    const handleContextMenuDelete = useCallback(() => {
+        if (contextMenu) {
+            if (contextMenu.type === 'clip') {
+                deleteClip(contextMenu.id);
+            } else {
+                deleteAnnotation(contextMenu.id);
+            }
+            closeContextMenu();
+        }
+    }, [contextMenu, closeContextMenu]);
+
+    // Handle context menu jump to start action
+    const handleContextMenuJumpToStart = useCallback(() => {
+        if (contextMenu) {
+            const item = contextMenu.type === 'clip'
+                ? clips.find(c => c.id === contextMenu.id)
+                : annotations.find(a => a.id === contextMenu.id);
+            if (item) {
+                seekTo(item.startTime);
+            }
+            closeContextMenu();
+        }
+    }, [contextMenu, clips, annotations, seekTo, closeContextMenu]);
+
+    // Close context menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (contextMenu?.show) {
+                closeContextMenu();
+            }
+        };
+
+        if (contextMenu?.show) {
+            document.addEventListener('click', handleClickOutside);
+            document.addEventListener('contextmenu', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+            document.removeEventListener('contextmenu', handleClickOutside);
+        };
+    }, [contextMenu?.show, closeContextMenu]);
+
     // Get current properties panel item data
     const getPropertiesPanelData = () => {
         if (!propertiesPanelItem) return null;
@@ -1781,7 +1866,9 @@ export default function VideoAnalyzeStone() {
                 }
             } else if (e.code === 'Escape') {
                 e.preventDefault();
-                if (showPropertiesPanel) {
+                if (contextMenu?.show) {
+                    closeContextMenu();
+                } else if (showPropertiesPanel) {
                     closePropertiesPanel();
                 } else {
                     setActiveTool('select');
@@ -1795,7 +1882,7 @@ export default function VideoAnalyzeStone() {
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, togglePlayPause, skip, createClip, deleteAnnotation, showPropertiesPanel, closePropertiesPanel]);
+    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, togglePlayPause, skip, createClip, deleteAnnotation, showPropertiesPanel, closePropertiesPanel, contextMenu, closeContextMenu]);
 
     // Update clip
     const updateClip = (clipId: string, updates: Partial<Clip>) => {
@@ -2455,6 +2542,101 @@ export default function VideoAnalyzeStone() {
                                 )}
                             </div>
                         </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Context Menu */}
+            <AnimatePresence>
+                {contextMenu?.show && (
+                    <motion.div
+                        className="fixed z-[60] min-w-[180px] bg-[#1a1a24] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+                        style={{
+                            left: contextMenu.x,
+                            top: contextMenu.y,
+                        }}
+                        initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                    >
+                        {/* Header */}
+                        <div className="px-3 py-2 border-b border-white/10 bg-white/5">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                {contextMenu.type === 'clip' ? 'Clip Options' : 'Annotation Options'}
+                            </span>
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="py-1">
+                            {/* Edit */}
+                            <motion.button
+                                onClick={handleContextMenuEdit}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white hover:bg-cyan-500/20 transition-colors"
+                                whileHover={{ x: 2 }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                Edit Properties
+                            </motion.button>
+
+                            {/* Jump to Start */}
+                            <motion.button
+                                onClick={handleContextMenuJumpToStart}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
+                                whileHover={{ x: 2 }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-blue-400">
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>
+                                Jump to Start
+                            </motion.button>
+
+                            {/* Duplicate (for annotations only) */}
+                            {contextMenu.type === 'annotation' && (
+                                <motion.button
+                                    onClick={() => {
+                                        const ann = annotations.find(a => a.id === contextMenu.id);
+                                        if (ann) {
+                                            const newAnn: Annotation = {
+                                                ...ann,
+                                                id: `ann_${Date.now()}`,
+                                                x: ann.x + 20,
+                                                y: ann.y + 20,
+                                            };
+                                            setAnnotations(prev => [...prev, newAnn]);
+                                        }
+                                        closeContextMenu();
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
+                                    whileHover={{ x: 2 }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg>
+                                    Duplicate
+                                </motion.button>
+                            )}
+
+                            {/* Divider */}
+                            <div className="my-1 border-t border-white/10" />
+
+                            {/* Delete */}
+                            <motion.button
+                                onClick={handleContextMenuDelete}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/20 transition-colors"
+                                whileHover={{ x: 2 }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                                Delete
+                            </motion.button>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -3363,18 +3545,23 @@ export default function VideoAnalyzeStone() {
                                                                 }}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    // Only open properties panel if it was a click, not a drag
+                                                                    // Only select if it was a click, not a drag
                                                                     if (wasDraggingRef.current) {
                                                                         wasDraggingRef.current = false; // Reset for next interaction
                                                                         return;
                                                                     }
+                                                                    // Just select the item on click
                                                                     if (item.isClip) {
-                                                                        openPropertiesPanel('clip', item.id);
+                                                                        setSelectedClip(item.id);
                                                                         seekTo(item.startTime);
                                                                     } else {
-                                                                        openPropertiesPanel('annotation', item.id);
+                                                                        setSelectedAnnotationId(item.id);
                                                                         seekTo(item.startTime);
                                                                     }
+                                                                }}
+                                                                onContextMenu={(e) => {
+                                                                    // Right-click to open context menu
+                                                                    openContextMenu(e, item.isClip ? 'clip' : 'annotation', item.id);
                                                                 }}
                                                             >
                                                                 {/* Left resize handle */}
