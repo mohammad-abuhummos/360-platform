@@ -379,7 +379,7 @@ function ConversationsPanel({
 }) {
   return (
     <section className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200/60 bg-gradient-to-b from-white to-zinc-50/30 shadow-xl shadow-zinc-900/5 dark:border-zinc-800 dark:from-zinc-900 dark:to-black">
-      <div className="space-y-3 border-b border-zinc-200/60 bg-white/80 p-4 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/80">
+      <div className="space-y-3 border-b border-zinc-200/60 bg-white/80 p-4 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/80" >
         <InputGroup className="shadow-sm">
           <SearchIcon data-slot="icon" />
           <Input
