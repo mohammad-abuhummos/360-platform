@@ -65,6 +65,9 @@ interface Annotation {
     scaleY?: number;
     // Keyframe animation data
     keyframes?: Keyframe[];
+    // Pause Scene annotation - video pauses when this annotation appears
+    isPauseScene?: boolean;
+    pauseSceneDuration?: number; // How long to pause (in seconds)
 }
 
 type Tool = 'select' | 'text' | 'circle' | 'spotlight' | 'line' | 'arrow' | 'connection' | 'polygon';
@@ -562,6 +565,11 @@ export default function VideoAnalyzeStone() {
         type: 'clip' | 'annotation';
         id: string;
     } | null>(null);
+
+    // Pause Scene state
+    const [isPauseSceneMode, setIsPauseSceneMode] = useState(false);
+    const [pauseSceneStartTime, setPauseSceneStartTime] = useState<number | null>(null);
+    const [pauseSceneDuration, setPauseSceneDuration] = useState(3); // Default 3 seconds pause
 
     // Track if a drag operation occurred (to prevent click after drag)
     const wasDraggingRef = useRef(false);
@@ -1200,12 +1208,15 @@ export default function VideoAnalyzeStone() {
             x: drawStart.x,
             y: drawStart.y,
             fill: activeTool === 'spotlight' ? 'rgba(255, 255, 0, 0.3)' : 'transparent',
-            stroke: '#00d4ff',
+            stroke: isPauseSceneMode ? '#ff6b6b' : '#00d4ff', // Red stroke for pause scene annotations
             strokeWidth: 3,
             opacity: 1,
             rotation: 0,
             scaleX: 1,
             scaleY: 1,
+            // Mark as pause scene annotation if in pause scene mode
+            isPauseScene: isPauseSceneMode,
+            pauseSceneDuration: isPauseSceneMode ? pauseSceneDuration : undefined,
         };
 
         switch (activeTool) {
@@ -1235,7 +1246,10 @@ export default function VideoAnalyzeStone() {
         setIsDrawing(false);
         setDrawStart(null);
         setDrawCurrent(null);
-        setActiveTool('select');
+        // Don't switch to select tool if in pause scene mode - allow continuous drawing
+        if (!isPauseSceneMode) {
+            setActiveTool('select');
+        }
     };
 
     // Get drawing preview props
@@ -1349,19 +1363,25 @@ export default function VideoAnalyzeStone() {
                 y: textInputPos.y,
                 text: textInput,
                 fontSize: 24,
-                fill: '#ffffff',
+                fill: isPauseSceneMode ? '#ff6b6b' : '#ffffff', // Red for pause scene
                 stroke: '#000000',
                 strokeWidth: 0.5,
                 opacity: 1,
                 rotation: 0,
                 scaleX: 1,
                 scaleY: 1,
+                // Mark as pause scene annotation if in pause scene mode
+                isPauseScene: isPauseSceneMode,
+                pauseSceneDuration: isPauseSceneMode ? pauseSceneDuration : undefined,
             };
             setAnnotations(prev => [...prev, newAnnotation]);
         }
         setTextInput("");
         setShowTextInput(false);
-        setActiveTool('select');
+        // Don't switch to select tool if in pause scene mode
+        if (!isPauseSceneMode) {
+            setActiveTool('select');
+        }
     };
 
     // Update annotation
@@ -1722,6 +1742,37 @@ export default function VideoAnalyzeStone() {
         }
     }, [contextMenu, openPropertiesPanel, closeContextMenu]);
 
+    // Enter Pause Scene mode
+    const enterPauseSceneMode = useCallback(() => {
+        if (!videoFile || isPauseSceneMode) return;
+
+        // Pause the video
+        if (videoRef.current && isPlaying) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+        }
+
+        setIsPauseSceneMode(true);
+        setPauseSceneStartTime(currentTime);
+    }, [videoFile, isPauseSceneMode, isPlaying, currentTime]);
+
+    // Exit Pause Scene mode
+    const exitPauseSceneMode = useCallback(() => {
+        setIsPauseSceneMode(false);
+        setPauseSceneStartTime(null);
+    }, []);
+
+    // Create pause scene annotation
+    const createPauseSceneAnnotation = useCallback((annotation: Omit<Annotation, 'isPauseScene' | 'pauseSceneDuration'>) => {
+        const pauseSceneAnnotation: Annotation = {
+            ...annotation,
+            isPauseScene: true,
+            pauseSceneDuration: pauseSceneDuration,
+        };
+        setAnnotations(prev => [...prev, pauseSceneAnnotation]);
+        return pauseSceneAnnotation;
+    }, [pauseSceneDuration]);
+
     // Handle context menu delete action
     const handleContextMenuDelete = useCallback(() => {
         if (contextMenu) {
@@ -1841,6 +1892,17 @@ export default function VideoAnalyzeStone() {
                 return;
             }
 
+            // Ctrl+Shift to enter/exit Pause Scene mode
+            if (e.ctrlKey && e.shiftKey && !e.code.startsWith('Arrow')) {
+                e.preventDefault();
+                if (isPauseSceneMode) {
+                    exitPauseSceneMode();
+                } else {
+                    enterPauseSceneMode();
+                }
+                return;
+            }
+
             if (e.code === 'Space') {
                 e.preventDefault();
                 togglePlayPause();
@@ -1866,7 +1928,9 @@ export default function VideoAnalyzeStone() {
                 }
             } else if (e.code === 'Escape') {
                 e.preventDefault();
-                if (contextMenu?.show) {
+                if (isPauseSceneMode) {
+                    exitPauseSceneMode();
+                } else if (contextMenu?.show) {
                     closeContextMenu();
                 } else if (showPropertiesPanel) {
                     closePropertiesPanel();
@@ -1882,7 +1946,7 @@ export default function VideoAnalyzeStone() {
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, togglePlayPause, skip, createClip, deleteAnnotation, showPropertiesPanel, closePropertiesPanel, contextMenu, closeContextMenu]);
+    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, togglePlayPause, skip, createClip, deleteAnnotation, showPropertiesPanel, closePropertiesPanel, contextMenu, closeContextMenu, isPauseSceneMode, enterPauseSceneMode, exitPauseSceneMode]);
 
     // Update clip
     const updateClip = (clipId: string, updates: Partial<Clip>) => {
@@ -2486,6 +2550,68 @@ export default function VideoAnalyzeStone() {
                                                     </div>
                                                 )}
 
+                                                {/* Pause Scene settings */}
+                                                <div className="space-y-3">
+                                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-red-400">
+                                                            <rect x="6" y="4" width="4" height="16" rx="1" />
+                                                            <rect x="14" y="4" width="4" height="16" rx="1" />
+                                                        </svg>
+                                                        Pause Scene
+                                                    </label>
+
+                                                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm text-gray-300">Pause on appear</span>
+                                                            {ann.isPauseScene && (
+                                                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-red-500/20 text-red-400 rounded">
+                                                                    {ann.pauseSceneDuration || 3}s
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <motion.button
+                                                            onClick={() => updateAnnotation(ann.id, {
+                                                                isPauseScene: !ann.isPauseScene,
+                                                                pauseSceneDuration: ann.isPauseScene ? undefined : 3
+                                                            })}
+                                                            className={`relative w-12 h-6 rounded-full transition-colors ${ann.isPauseScene ? 'bg-red-500' : 'bg-white/20'
+                                                                }`}
+                                                            whileTap={{ scale: 0.95 }}
+                                                        >
+                                                            <motion.div
+                                                                className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow"
+                                                                animate={{ x: ann.isPauseScene ? 24 : 0 }}
+                                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                                            />
+                                                        </motion.button>
+                                                    </div>
+
+                                                    {ann.isPauseScene && (
+                                                        <div className="space-y-2">
+                                                            <label className="text-xs text-gray-500">Pause Duration</label>
+                                                            <div className="flex gap-2">
+                                                                {[1, 2, 3, 5, 10].map((dur) => (
+                                                                    <motion.button
+                                                                        key={dur}
+                                                                        onClick={() => updateAnnotation(ann.id, { pauseSceneDuration: dur })}
+                                                                        className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${ann.pauseSceneDuration === dur
+                                                                            ? 'bg-red-500/30 text-red-400 border border-red-500/50'
+                                                                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-transparent'
+                                                                            }`}
+                                                                        whileHover={{ scale: 1.05 }}
+                                                                        whileTap={{ scale: 0.95 }}
+                                                                    >
+                                                                        {dur}s
+                                                                    </motion.button>
+                                                                ))}
+                                                            </div>
+                                                            <p className="text-[10px] text-gray-600">
+                                                                Video will pause for this duration when annotation appears in preview
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
                                                 {/* Keyframes info */}
                                                 {ann.keyframes && ann.keyframes.length > 0 && (
                                                     <div className="space-y-2">
@@ -2741,6 +2867,23 @@ export default function VideoAnalyzeStone() {
                                     transition={{ duration: 1, repeat: Infinity }}
                                 />
                                 <span className="text-red-400 text-sm font-medium">Recording Motion</span>
+                            </motion.div>
+                        )}
+
+                        {/* Pause Scene Mode Indicator */}
+                        {isPauseSceneMode && (
+                            <motion.div
+                                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 border border-red-500/50 rounded-lg"
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                            >
+                                <motion.div
+                                    className="w-3 h-3 bg-red-500 rounded-full"
+                                    animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
+                                    transition={{ duration: 1, repeat: Infinity }}
+                                />
+                                <span className="text-red-400 text-sm font-medium">Pause Scene</span>
+                                <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-mono text-gray-400">Ctrl+Shift</kbd>
                             </motion.div>
                         )}
 
@@ -3147,7 +3290,7 @@ export default function VideoAnalyzeStone() {
 
                             {/* Active tool indicator */}
                             <AnimatePresence>
-                                {activeTool !== 'select' && !isDrawing && !showTextInput && (
+                                {activeTool !== 'select' && !isDrawing && !showTextInput && !isPauseSceneMode && (
                                     <motion.div
                                         className="absolute bottom-4 left-4 px-4 py-2 bg-white/10 border border-white/20 rounded-lg backdrop-blur-sm"
                                         initial={{ opacity: 0, y: 10 }}
@@ -3159,6 +3302,111 @@ export default function VideoAnalyzeStone() {
                                             <span className="font-medium capitalize">{activeTool} Tool</span>
                                             <span className="text-gray-400">• Click and drag to draw</span>
                                         </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Pause Scene Mode Overlay */}
+                            <AnimatePresence>
+                                {isPauseSceneMode && (
+                                    <motion.div
+                                        className="absolute inset-0 pointer-events-none"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                    >
+                                        {/* Border glow effect */}
+                                        <div className="absolute inset-0 border-4 border-red-500/50 rounded-lg animate-pulse" />
+
+                                        {/* Top banner */}
+                                        <motion.div
+                                            className="absolute top-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-red-500/90 backdrop-blur-sm rounded-xl shadow-lg shadow-red-500/30 pointer-events-auto"
+                                            initial={{ y: -20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <motion.div
+                                                    className="w-3 h-3 bg-white rounded-full"
+                                                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+                                                    transition={{ duration: 1, repeat: Infinity }}
+                                                />
+                                                <span className="text-white font-semibold">PAUSE SCENE MODE</span>
+                                                <span className="text-white/70 text-sm">• Draw annotations for analysis</span>
+                                            </div>
+                                        </motion.div>
+
+                                        {/* Bottom controls */}
+                                        <motion.div
+                                            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-[#1a1a24]/95 backdrop-blur-sm border border-white/10 rounded-xl pointer-events-auto"
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                        >
+                                            {/* Pause duration control */}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-gray-400 text-sm">Pause Duration:</span>
+                                                <div className="flex items-center gap-1">
+                                                    {[1, 2, 3, 5, 10].map((dur) => (
+                                                        <motion.button
+                                                            key={dur}
+                                                            onClick={() => setPauseSceneDuration(dur)}
+                                                            className={`px-2 py-1 text-xs font-medium rounded transition-all ${pauseSceneDuration === dur
+                                                                ? 'bg-red-500 text-white'
+                                                                : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'
+                                                                }`}
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                        >
+                                                            {dur}s
+                                                        </motion.button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="w-px h-6 bg-white/10" />
+
+                                            {/* Tool shortcuts */}
+                                            <div className="flex items-center gap-2">
+                                                {['circle', 'arrow', 'line', 'text'].map((tool) => (
+                                                    <motion.button
+                                                        key={tool}
+                                                        onClick={() => setActiveTool(tool as Tool)}
+                                                        className={`p-2 rounded-lg transition-all ${activeTool === tool
+                                                            ? 'bg-red-500/30 text-red-400'
+                                                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                                                            }`}
+                                                        whileHover={{ scale: 1.1 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        title={tool.charAt(0).toUpperCase() + tool.slice(1)}
+                                                    >
+                                                        {getLayerIcon(tool)}
+                                                    </motion.button>
+                                                ))}
+                                            </div>
+
+                                            <div className="w-px h-6 bg-white/10" />
+
+                                            {/* Exit button */}
+                                            <motion.button
+                                                onClick={exitPauseSceneMode}
+                                                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm font-medium transition-all"
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                <span>Done</span>
+                                                <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-mono">ESC</kbd>
+                                            </motion.button>
+                                        </motion.div>
+
+                                        {/* Timestamp indicator */}
+                                        <motion.div
+                                            className="absolute top-4 right-4 px-3 py-2 bg-black/70 backdrop-blur-sm rounded-lg"
+                                            initial={{ x: 20, opacity: 0 }}
+                                            animate={{ x: 0, opacity: 1 }}
+                                        >
+                                            <div className="text-sm font-mono text-red-400">
+                                                ⏸ {formatTime(pauseSceneStartTime || currentTime)}
+                                            </div>
+                                        </motion.div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -3597,6 +3845,15 @@ export default function VideoAnalyzeStone() {
                                                                             <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" title="Has recorded motion" />
                                                                         </div>
                                                                     )}
+                                                                    {/* Pause Scene indicator */}
+                                                                    {!item.isClip && annotations.find(a => a.id === item.id)?.isPauseScene && (
+                                                                        <div className="ml-1 flex items-center gap-0.5" title="Pause Scene - Video will pause here">
+                                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-red-400">
+                                                                                <rect x="6" y="4" width="4" height="16" rx="1" />
+                                                                                <rect x="14" y="4" width="4" height="16" rx="1" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
 
                                                                 {/* Keyframe dots on timeline item */}
@@ -3828,6 +4085,36 @@ export default function VideoAnalyzeStone() {
                                     {Icons.record}
                                 </motion.span>
                                 Add Shot on Goal (M)
+                            </motion.button>
+                        </div>
+
+                        {/* Pause Scene Info */}
+                        <div className="p-4 border-t border-white/5">
+                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-red-400">
+                                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                                </svg>
+                                Pause Scene
+                            </h3>
+                            <div className="text-xs text-gray-500 mb-3">
+                                Press <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-300 font-mono">Ctrl+Shift</kbd> to pause video and draw annotations for analysis (e.g., offside positions).
+                            </div>
+                            <motion.button
+                                onClick={isPauseSceneMode ? exitPauseSceneMode : enterPauseSceneMode}
+                                disabled={!videoFile}
+                                className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isPauseSceneMode
+                                    ? 'bg-red-500/20 border border-red-500/50 text-red-400'
+                                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300'
+                                    }`}
+                                whileHover={{ scale: videoFile ? 1.02 : 1 }}
+                                whileTap={{ scale: videoFile ? 0.98 : 1 }}
+                            >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                                    <rect x="14" y="4" width="4" height="16" rx="1" />
+                                </svg>
+                                {isPauseSceneMode ? 'Exit Pause Scene' : 'Enter Pause Scene'}
                             </motion.button>
                         </div>
 

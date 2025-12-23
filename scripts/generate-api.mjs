@@ -283,8 +283,10 @@ export interface RequestConfig extends ApiRequestOptions {
   path: string;
 }
 
+const DEFAULT_BASE_URL = resolveDefaultBaseUrl();
+
 export function request(config: RequestConfig): Promise<Response> {
-  const url = buildUrl(config.path, config.baseUrl, config.pathParams, config.query);
+  const url = buildUrl(config.path, config.baseUrl ?? DEFAULT_BASE_URL, config.pathParams, config.query);
   const headers = new Headers(config.init?.headers ?? {});
 
   if (config.headers) {
@@ -360,6 +362,22 @@ function isBodyInit(value: unknown): value is BodyInit {
   if (typeof URLSearchParams !== "undefined" && value instanceof URLSearchParams) return true;
   if (typeof ReadableStream !== "undefined" && value instanceof ReadableStream) return true;
   return false;
+}
+
+function resolveDefaultBaseUrl() {
+  if (typeof process !== "undefined" && typeof process.env === "object" && process.env?.VITE_API_BASE_URL) {
+    return process.env.VITE_API_BASE_URL;
+  }
+
+  if (
+    typeof import.meta !== "undefined" &&
+    typeof import.meta.env === "object" &&
+    import.meta.env?.VITE_API_BASE_URL
+  ) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+
+  return undefined;
 }
 `;
 }

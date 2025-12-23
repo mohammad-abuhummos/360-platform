@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SportsPlatform.Api - CalendarEventAttendance",
-    "_postman_id": "9f788aa4-7da6-4d9b-8ad4-af2c7a12ceef",
+    "_postman_id": "a5650c7a-66eb-4558-985b-e0f53414dac4",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": "Auto-generated from swagger.json for the CalendarEventAttendance tag."
   },
