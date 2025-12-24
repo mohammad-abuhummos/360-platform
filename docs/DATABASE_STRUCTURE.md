@@ -15,6 +15,9 @@ firestore/
 │       ├── conversations/          # Chat conversations
 │       │   └── {conversationId}/
 │       │       └── messages/       # Chat messages
+│       ├── events/                 # Calendar events
+│       │   └── {eventId}/
+│       │       └── comments/       # Event comments
 │       ├── registrations/          # Registration forms
 │       └── registration_categories/ # Registration categories
 └── video_analyses/                 # Video analysis data
@@ -374,6 +377,206 @@ Stores chat messages within each conversation.
 
 ---
 
+## Subcollection: `clubs/{clubId}/events`
+
+Stores calendar events for each club (practices, games, meetings, camps, cups, etc.).
+
+### Document ID
+
+- **Format:** Auto-generated Firestore ID
+
+### Fields
+
+| Field              | Type                  | Required | Description                                                                          |
+| ------------------ | --------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `clubId`           | `string`              | ✅       | Parent club ID                                                                       |
+| `type`             | `string`              | ✅       | Event type: `"game"` \| `"practice"` \| `"meeting"` \| `"camp"` \| `"cup"` \| `"other"` |
+| `title`            | `string`              | ✅       | Event title                                                                          |
+| `description`      | `string \| null`      | ❌       | Event description                                                                    |
+| `location`         | `string`              | ✅       | Event location                                                                       |
+| `locationCoords`   | `object \| null`      | ❌       | Lat/lng coordinates for location                                                     |
+| `startTime`        | `timestamp`           | ✅       | Event start time                                                                     |
+| `endTime`          | `timestamp`           | ✅       | Event end time                                                                       |
+| `meetTimeBefore`   | `number`              | ✅       | Minutes to meet before event (default 0)                                             |
+| `rsvpBefore`       | `timestamp \| null`   | ❌       | RSVP deadline                                                                        |
+| `repeat`           | `string`              | ✅       | Repeat: `"none"` \| `"daily"` \| `"weekly"` \| `"biweekly"` \| `"monthly"`           |
+| `repeatUntil`      | `timestamp \| null`   | ❌       | End date for recurring events                                                        |
+| `autoAddAdmins`    | `boolean`             | ✅       | Auto-add new admins as organizers                                                    |
+| `autoAddPlayers`   | `boolean`             | ✅       | Auto-add new players as participants                                                 |
+| `hideParticipants` | `boolean`             | ✅       | Hide participants from each other                                                    |
+| `visibility`       | `string`              | ✅       | Visibility: `"everyone"` \| `"organizers_only"` \| `"participants_only"`             |
+| `showOnWebsite`    | `boolean`             | ✅       | Show event on public website                                                         |
+| `physicalStrain`   | `number`              | ✅       | Physical strain level (0-100)                                                        |
+| `attachments`      | `array<Attachment>`   | ✅       | Array of attachments                                                                 |
+| `gameDetails`      | `object \| null`      | ❌       | Game-specific details (for type "game" or "cup")                                     |
+| `resources`        | `array<Resource>`     | ✅       | Array of resources (fields, equipment)                                               |
+| `session`          | `object \| null`      | ❌       | Training session details                                                             |
+| `organizers`       | `array<Participant>`  | ✅       | Array of organizers                                                                  |
+| `participants`     | `array<Participant>`  | ✅       | Array of participants                                                                |
+| `attendanceStats`  | `object`              | ✅       | Attendance statistics                                                                |
+| `createdBy`        | `string`              | ✅       | User ID who created the event                                                        |
+| `createdByName`    | `string`              | ✅       | Display name of creator                                                              |
+| `commentsCount`    | `number`              | ✅       | Number of comments                                                                   |
+| `createdAt`        | `timestamp`           | ✅       | Document creation timestamp                                                          |
+| `updatedAt`        | `timestamp`           | ✅       | Last update timestamp                                                                |
+
+### Event Types
+
+| Type       | Description              | Has Game Details |
+| ---------- | ------------------------ | ---------------- |
+| `game`     | Match/game               | ✅               |
+| `practice` | Training session         | ❌               |
+| `meeting`  | Team meeting             | ❌               |
+| `camp`     | Training camp            | ❌               |
+| `cup`      | Cup/tournament match     | ✅               |
+| `other`    | Other event type         | ❌               |
+
+### GameDetails Structure (for game/cup events)
+
+```typescript
+{
+  homeTeam?: {
+    id?: string;
+    name: string;
+    logoUrl?: string;
+  };
+  awayTeam?: {
+    id?: string;
+    name: string;
+    logoUrl?: string;
+  };
+  gameStart?: string;
+  competition?: string;
+  competitionId?: string;
+  isFriendlyMatch: boolean;
+  gameFormat: string; // "11v11", "9v9", "7v7", "5v5"
+  periods: number;
+  periodLength: number; // minutes
+  field?: string;
+  fieldType?: "grass" | "artificial" | "indoor" | "unknown";
+}
+```
+
+### Participant Structure
+
+```typescript
+{
+  id: string;
+  name: string;
+  initials: string;
+  role: "organizer" | "participant";
+  attendanceStatus: "accepted" | "declined" | "pending" | "waiting";
+  attendedAt?: Timestamp;
+}
+```
+
+### AttendanceStats Structure
+
+```typescript
+{
+  accepted: number;
+  declined: number;
+  pending: number;
+  waiting: number;
+}
+```
+
+### Example Document
+
+```json
+{
+  "clubId": "O6v1mAyfA7fNvt4yHoPb8ltCZ3l1-jordan-knights-football-club",
+  "type": "practice",
+  "title": "U15-B - Autumn 2025",
+  "description": "Weekly practice session",
+  "location": "Jordan Knights Stadium",
+  "startTime": "December 24, 2025 at 5:00:00 PM UTC+3",
+  "endTime": "December 24, 2025 at 6:30:00 PM UTC+3",
+  "meetTimeBefore": 15,
+  "repeat": "weekly",
+  "autoAddAdmins": true,
+  "autoAddPlayers": true,
+  "hideParticipants": false,
+  "visibility": "everyone",
+  "showOnWebsite": true,
+  "physicalStrain": 60,
+  "attachments": [],
+  "resources": [
+    {
+      "id": "field-1",
+      "name": "AHG",
+      "type": "field",
+      "location": "Amman"
+    }
+  ],
+  "organizers": [
+    {
+      "id": "userId1",
+      "name": "SMT Dev",
+      "initials": "SD",
+      "role": "organizer",
+      "attendanceStatus": "accepted"
+    }
+  ],
+  "participants": [
+    {
+      "id": "userId2",
+      "name": "Ayham Motaz",
+      "initials": "AM",
+      "role": "participant",
+      "attendanceStatus": "accepted"
+    }
+  ],
+  "attendanceStats": {
+    "accepted": 2,
+    "declined": 0,
+    "pending": 0,
+    "waiting": 0
+  },
+  "createdBy": "userId1",
+  "createdByName": "SMT Dev",
+  "commentsCount": 3,
+  "createdAt": "December 24, 2025 at 10:00:00 AM UTC+3",
+  "updatedAt": "December 24, 2025 at 10:30:00 AM UTC+3"
+}
+```
+
+---
+
+## Subcollection: `clubs/{clubId}/events/{eventId}/comments`
+
+Stores comments for each event.
+
+### Document ID
+
+- **Format:** Auto-generated Firestore ID
+
+### Fields
+
+| Field          | Type        | Required | Description                 |
+| -------------- | ----------- | -------- | --------------------------- |
+| `eventId`      | `string`    | ✅       | Parent event ID             |
+| `userId`       | `string`    | ✅       | Commenter's user ID         |
+| `userName`     | `string`    | ✅       | Commenter's display name    |
+| `userInitials` | `string`    | ✅       | Commenter's initials        |
+| `content`      | `string`    | ✅       | Comment text                |
+| `createdAt`    | `timestamp` | ✅       | Comment creation timestamp  |
+
+### Example Document
+
+```json
+{
+  "eventId": "event123",
+  "userId": "userId1",
+  "userName": "SMT Dev",
+  "userInitials": "SD",
+  "content": "Looking forward to the session!",
+  "createdAt": "December 24, 2025 at 10:30:00 AM UTC+3"
+}
+```
+
+---
+
 ## Collection: `video_analyses`
 
 Stores video analysis sessions with clips and annotations.
@@ -473,6 +676,8 @@ Stores video analysis sessions with clips and annotations.
 │  │  users/{authUid}                                                  │  │  │
 │  │  clubs/{clubId}/conversations/{conversationId}                    │  │  │
 │  │  clubs/{clubId}/conversations/{conversationId}/messages/{msgId}   │  │  │
+│  │  clubs/{clubId}/events/{eventId}                                  │  │  │
+│  │  clubs/{clubId}/events/{eventId}/comments/{commentId}             │  │  │
 │  └───────────────────────────────────────────────────────────────────┘  │  │
 │                                                                          │  │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -539,6 +744,7 @@ See the following files for TypeScript type definitions:
 - `app/lib/firestore-users.ts` - User and Club types
 - `app/lib/firestore-team.ts` - ClubMember types
 - `app/lib/firestore-chat.ts` - Conversation and ChatMessage types
+- `app/lib/firestore-events.ts` - CalendarEvent and EventComment types
 - `app/lib/firestore-registrations.ts` - Registration types
 - `app/lib/firebase.ts` - VideoAnalysis types
 

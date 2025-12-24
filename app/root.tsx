@@ -58,6 +58,7 @@ function AuthGate() {
   const navigate = useNavigate();
   const { firebaseUser, loading } = useAuth();
   const isLoginRoute = location.pathname.startsWith("/login");
+  const isPublicFormRoute = location.pathname.startsWith("/forms/");
   const isBrowser = typeof window !== "undefined";
 
   useEffect(() => {
@@ -65,12 +66,13 @@ function AuthGate() {
       return;
     }
 
-    if (!firebaseUser && !isLoginRoute) {
+    // Don't require auth for login or public form routes
+    if (!firebaseUser && !isLoginRoute && !isPublicFormRoute) {
       navigate("/login", { replace: true, state: { from: location.pathname } });
     } else if (firebaseUser && isLoginRoute) {
       navigate("/", { replace: true });
     }
-  }, [firebaseUser, loading, isLoginRoute, isBrowser, navigate, location.pathname]);
+  }, [firebaseUser, loading, isLoginRoute, isPublicFormRoute, isBrowser, navigate, location.pathname]);
 
   if (!isBrowser) {
     return <Outlet />;

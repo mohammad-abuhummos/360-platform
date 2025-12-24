@@ -21,7 +21,7 @@ import {
     type CreateConversationPayload,
     CONVERSATION_TAGS,
 } from "~/lib/firestore-chat";
-import { subscribeToClubMembers, type ClubMember } from "~/lib/firestore-team";
+import { subscribeToClubMembers, getUserIdsByEmails, type ClubMember } from "~/lib/firestore-team";
 import { Dialog, DialogTitle, DialogDescription, DialogBody, DialogActions } from "~/components/dialog";
 import { Button } from "~/components/button";
 import { Input } from "~/components/input";
@@ -188,11 +188,12 @@ export default function ChatRoute() {
             content: string,
             type: MessageType,
             pendingAttachments?: MessageAttachment[],
-            files?: File[]
+            files?: File[],
+            replyTo?: { messageId: string; content: string; senderName: string }
         ) => {
             if (!clubId || !activeConversationId || !userId) return;
 
-            console.log("[Chat] Sending message:", { content, type, hasAttachments: !!pendingAttachments?.length, hasFiles: !!files?.length });
+            console.log("[Chat] Sending message:", { content, type, hasAttachments: !!pendingAttachments?.length, hasFiles: !!files?.length, hasReply: !!replyTo });
 
             try {
                 let uploadedAttachments: MessageAttachment[] | undefined;
@@ -235,6 +236,7 @@ export default function ChatRoute() {
                     type,
                     content,
                     attachments: uploadedAttachments,
+                    replyTo: replyTo,
                 });
 
                 console.log("[Chat] Message sent successfully");
@@ -254,23 +256,48 @@ export default function ChatRoute() {
         setIsCreatingGroup(true);
 
         try {
-            // Build participant names map
+            // Get the selected members
+            const selectedMembers = selectedMemberIds
+                .map((memberId) => clubMembers.find((m) => m.id === memberId))
+                .filter((m): m is ClubMember => m !== undefined);
+
+            // Get emails of selected members
+            const emails = selectedMembers.map((m) => m.email);
+
+            // Look up user IDs by email
+            const emailToUserId = await getUserIdsByEmails(emails);
+
+            // Build participant IDs and names with actual user IDs
+            const participantIds: string[] = [userId];
             const participantNames: Record<string, string> = {
                 [userId]: userName,
             };
+            const membersWithoutAccounts: string[] = [];
 
-            selectedMemberIds.forEach((memberId) => {
-                const member = clubMembers.find((m) => m.id === memberId);
-                if (member) {
-                    participantNames[memberId] = member.name;
+            selectedMembers.forEach((member) => {
+                // First check if member already has userId field
+                const memberUserId = member.userId || emailToUserId.get(member.email);
+                
+                if (memberUserId) {
+                    participantIds.push(memberUserId);
+                    participantNames[memberUserId] = member.name;
+                } else {
+                    membersWithoutAccounts.push(member.name);
                 }
             });
+
+            if (membersWithoutAccounts.length > 0) {
+                console.warn(
+                    "[Chat] Some members don't have user accounts:",
+                    membersWithoutAccounts
+                );
+            }
 
             const payload: CreateConversationPayload = {
                 type: "group",
                 name: newGroupName.trim(),
                 description: newGroupDescription.trim() || undefined,
-                participantIds: [userId, ...selectedMemberIds],
+                participantIds,
                 participantNames,
                 tag: newGroupTag,
             };
@@ -286,6 +313,12 @@ export default function ChatRoute() {
             setNewGroupTag("General");
             setSelectedMemberIds([]);
             setShowCreateGroupDialog(false);
+
+            if (membersWithoutAccounts.length > 0) {
+                alert(
+                    `Group created! Note: ${membersWithoutAccounts.join(", ")} could not be added (no user accounts).`
+                );
+            }
         } catch (err) {
             console.error("Error creating group:", err);
         } finally {
@@ -339,19 +372,60 @@ export default function ChatRoute() {
         setIsAddingMembers(true);
 
         try {
-            const participantsToAdd = addMemberSelectedIds.map((memberId) => {
-                const member = clubMembers.find((m) => m.id === memberId);
-                return {
-                    id: memberId,
-                    name: member?.name ?? "Unknown",
-                };
+            // Get the selected members
+            const selectedMembers = addMemberSelectedIds
+                .map((memberId) => clubMembers.find((m) => m.id === memberId))
+                .filter((m): m is ClubMember => m !== undefined);
+
+            // Get emails of selected members
+            const emails = selectedMembers.map((m) => m.email);
+
+            // Look up user IDs by email
+            const emailToUserId = await getUserIdsByEmails(emails);
+
+            // Build participants list with actual user IDs
+            const participantsToAdd: { id: string; name: string }[] = [];
+            const membersWithoutAccounts: string[] = [];
+
+            selectedMembers.forEach((member) => {
+                // First check if member already has userId field
+                const userId = member.userId || emailToUserId.get(member.email);
+                
+                if (userId) {
+                    participantsToAdd.push({
+                        id: userId,
+                        name: member.name,
+                    });
+                } else {
+                    membersWithoutAccounts.push(member.name);
+                }
             });
 
-            await addParticipants(clubId, activeConversationId, participantsToAdd);
+            if (membersWithoutAccounts.length > 0) {
+                console.warn(
+                    "[Chat] Some members don't have user accounts and cannot be added to chat:",
+                    membersWithoutAccounts
+                );
+            }
+
+            if (participantsToAdd.length > 0) {
+                await addParticipants(clubId, activeConversationId, participantsToAdd);
+                console.log("[Chat] Added participants:", participantsToAdd);
+            }
 
             // Reset and close dialog
             setAddMemberSelectedIds([]);
             setShowAddMemberDialog(false);
+
+            if (membersWithoutAccounts.length > 0 && participantsToAdd.length === 0) {
+                alert(
+                    `Could not add members: ${membersWithoutAccounts.join(", ")}. They need to have user accounts first.`
+                );
+            } else if (membersWithoutAccounts.length > 0) {
+                alert(
+                    `Added ${participantsToAdd.length} member(s). Could not add: ${membersWithoutAccounts.join(", ")} (no user accounts).`
+                );
+            }
         } catch (err) {
             console.error("Error adding members:", err);
         } finally {

@@ -21,6 +21,12 @@ type PendingAttachment = {
     duration?: number;
 };
 
+type ReplyTo = {
+    messageId: string;
+    content: string;
+    senderName: string;
+};
+
 type MessageComposerProps = {
     onSendMessage: (
         content: string,
@@ -32,6 +38,8 @@ type MessageComposerProps = {
     placeholder?: string;
     isUploading?: boolean;
     uploadProgress?: number;
+    replyingTo?: ReplyTo | null;
+    onCancelReply?: () => void;
 };
 
 export function MessageComposer({
@@ -40,6 +48,8 @@ export function MessageComposer({
     placeholder = "Type your message here... (Press Enter to send)",
     isUploading = false,
     uploadProgress = 0,
+    replyingTo,
+    onCancelReply,
 }: MessageComposerProps) {
     const [messageContent, setMessageContent] = useState("");
     const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
@@ -222,6 +232,27 @@ export function MessageComposer({
 
     return (
         <div className="border-t border-zinc-200/60 bg-gradient-to-r from-white to-zinc-50/50 p-5 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-900/50">
+            {/* Reply Preview */}
+            {replyingTo && (
+                <div className="mb-4 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/30">
+                    <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-3">
+                        <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                            Replying to {replyingTo.senderName}
+                        </p>
+                        <p className="mt-0.5 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                            {replyingTo.content || "[Media message]"}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onCancelReply}
+                        className="shrink-0 rounded-full p-1 text-zinc-400 transition hover:bg-zinc-200 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+                    >
+                        <XIcon className="size-4" />
+                    </button>
+                </div>
+            )}
+
             {/* Pending Attachments Preview */}
             {pendingAttachments.length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">

@@ -13,6 +13,7 @@ import {
     serverTimestamp,
     setDoc,
     updateDoc,
+    where,
     type DocumentData,
     type FirestoreError,
     type QueryDocumentSnapshot,
@@ -47,6 +48,7 @@ export type ClubMember = {
     segment: MemberSegment;
     status: MemberStatus;
     clubId: string;
+    userId?: string; // Firebase Auth UID if member has a user account
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 };
@@ -420,6 +422,72 @@ function generatePassword(length = 12): string {
         password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return password;
+}
+
+const USER_COLLECTION = "users";
+
+/**
+ * Look up a user's Firebase Auth UID by their email address
+ */
+export async function getUserIdByEmail(email: string): Promise<string | null> {
+    const usersRef = collection(db, USER_COLLECTION);
+    const q = query(usersRef, where("email", "==", email), limit(1));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+        return null;
+    }
+    
+    return snapshot.docs[0].id;
+}
+
+/**
+ * Look up multiple user IDs by their email addresses
+ * Returns a map of email -> userId (null if not found)
+ */
+export async function getUserIdsByEmails(emails: string[]): Promise<Map<string, string | null>> {
+    const result = new Map<string, string | null>();
+    
+    // Initialize all emails with null
+    emails.forEach(email => result.set(email, null));
+    
+    if (emails.length === 0) return result;
+    
+    // Firestore 'in' query is limited to 30 items, so batch if needed
+    const batches: string[][] = [];
+    for (let i = 0; i < emails.length; i += 30) {
+        batches.push(emails.slice(i, i + 30));
+    }
+    
+    for (const batch of batches) {
+        const usersRef = collection(db, USER_COLLECTION);
+        const q = query(usersRef, where("email", "in", batch));
+        const snapshot = await getDocs(q);
+        
+        snapshot.docs.forEach(doc => {
+            const email = doc.data().email;
+            if (email) {
+                result.set(email, doc.id);
+            }
+        });
+    }
+    
+    return result;
+}
+
+/**
+ * Update a club member's userId field
+ */
+export async function linkMemberToUser(
+    clubId: string,
+    memberId: string,
+    userId: string
+): Promise<void> {
+    const memberRef = doc(db, CLUBS_COLLECTION, clubId, MEMBERS_SUBCOLLECTION, memberId);
+    await updateDoc(memberRef, {
+        userId,
+        updatedAt: serverTimestamp(),
+    });
 }
 
 export { generatePassword };

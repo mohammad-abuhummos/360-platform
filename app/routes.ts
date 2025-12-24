@@ -4,6 +4,7 @@ export default [
   index("routes/index.tsx"),
   route("/team", "routes/team.tsx"),
   route("/calendar", "routes/calendar.tsx"),
+  route("/events/:eventId", "routes/events.$eventId.tsx"),
   route("/chat", "routes/chat.tsx"),
   route("/components", "routes/components.tsx"),
   route("/login", "routes/login.tsx"),
@@ -15,4 +16,5 @@ export default [
   route("/management/contacts", "routes/management/contacts.tsx"),
   route("/management/attendance", "routes/management/attendance.tsx"),
   route("/registrations", "routes/registrations.tsx"),
+  route("/forms/:clubId/:registrationId", "routes/forms.$clubId.$registrationId.tsx"),
 ] satisfies RouteConfig;

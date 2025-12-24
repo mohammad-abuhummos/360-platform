@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Avatar } from "../avatar";
 import { Badge } from "../badge";
 import { Button } from "../button";
@@ -10,11 +10,17 @@ import { MessageComposer } from "./message-composer";
 import type { ChatMessage, Conversation, MessageAttachment, MessageType } from "~/lib/firestore-chat";
 import { formatMessageTime, formatFileSize } from "~/lib/firestore-chat";
 
+type ReplyTo = {
+    messageId: string;
+    content: string;
+    senderName: string;
+};
+
 type ChatPanelProps = {
     conversation?: Conversation;
     messages: ChatMessage[];
     currentUserId: string;
-    onSendMessage: (content: string, type: MessageType, attachments?: MessageAttachment[], files?: File[]) => void;
+    onSendMessage: (content: string, type: MessageType, attachments?: MessageAttachment[], files?: File[], replyTo?: ReplyTo) => void;
     loading?: boolean;
     isUploading?: boolean;
     uploadProgress?: number;
@@ -30,6 +36,27 @@ export function ChatPanel({
     uploadProgress = 0,
 }: ChatPanelProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [replyingTo, setReplyingTo] = useState<ReplyTo | null>(null);
+
+    const handleReply = useCallback((message: ChatMessage) => {
+        setReplyingTo({
+            messageId: message.id,
+            content: message.content || (message.type !== "text" ? `[${message.type}]` : ""),
+            senderName: message.senderName,
+        });
+    }, []);
+
+    const handleCancelReply = useCallback(() => {
+        setReplyingTo(null);
+    }, []);
+
+    const handleSendWithReply = useCallback(
+        (content: string, type: MessageType, attachments?: MessageAttachment[], files?: File[]) => {
+            onSendMessage(content, type, attachments, files, replyingTo ?? undefined);
+            setReplyingTo(null);
+        },
+        [onSendMessage, replyingTo]
+    );
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -193,7 +220,10 @@ export function ChatPanel({
                                             {/* Actions */}
                                             {!isDeleted && (
                                                 <div className="mt-3 flex items-center gap-4 border-t border-zinc-100 pt-3 dark:border-zinc-700">
-                                                    <button className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 transition hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400">
+                                                    <button
+                                                        onClick={() => handleReply(message)}
+                                                        className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 transition hover:text-blue-600 dark:text-zinc-400 dark:hover:text-blue-400"
+                                                    >
                                                         <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path
                                                                 strokeLinecap="round"
@@ -203,28 +233,6 @@ export function ChatPanel({
                                                             />
                                                         </svg>
                                                         Reply
-                                                    </button>
-                                                    <button className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 transition hover:text-amber-600 dark:text-zinc-400 dark:hover:text-amber-500">
-                                                        <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                                                            />
-                                                        </svg>
-                                                        Save
-                                                    </button>
-                                                    <button className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 transition hover:text-green-600 dark:text-zinc-400 dark:hover:text-green-500">
-                                                        <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                                            />
-                                                        </svg>
-                                                        Share
                                                     </button>
                                                 </div>
                                             )}
@@ -240,10 +248,12 @@ export function ChatPanel({
 
             {/* Composer */}
             <MessageComposer
-                onSendMessage={onSendMessage}
+                onSendMessage={handleSendWithReply}
                 disabled={loading}
                 isUploading={isUploading}
                 uploadProgress={uploadProgress}
+                replyingTo={replyingTo}
+                onCancelReply={handleCancelReply}
             />
         </section>
     );
