@@ -1,45 +1,54 @@
-export type Conversation = {
-  id: number
-  name: string
-  initials: string
-  preview: string
-  timestamp: string
-  seen: string
-  tag: string
-  unread?: number
-}
+import type { Timestamp } from "firebase/firestore";
 
-export type MessageAttachment = {
-  id: number
-  type: 'video' | 'link'
-  src: string
-  duration?: string
-  poster?: string
-  label?: string
-}
+// Re-export Firestore types for backward compatibility
+export type {
+    ChatMessage,
+    Conversation,
+    MessageAttachment,
+    ConversationParticipant as Participant,
+    MessageType,
+    ConversationType,
+    ConversationTag,
+} from "~/lib/firestore-chat";
 
-export type Message = {
-  id: number
-  sender: string
-  initials: string
-  role: string
-  time: string
-  content: string
-  attachments?: MessageAttachment[]
-}
+// Legacy types for backwards compatibility with existing components
+export type LegacyMessage = {
+    id: number;
+    sender: string;
+    initials: string;
+    role: string;
+    time: string;
+    content: string;
+    attachments?: LegacyMessageAttachment[];
+};
 
-export type Participant = {
-  id: number
-  name: string
-  initials: string
-  role: string
-  status: 'Online' | 'Offline'
-}
+export type LegacyMessageAttachment = {
+    id: number;
+    type: "video" | "link" | "image" | "file" | "voice";
+    src: string;
+    duration?: string;
+    poster?: string;
+    label?: string;
+    fileName?: string;
+    fileSize?: string;
+};
+
+export type LegacyConversation = {
+    id: number;
+    name: string;
+    initials: string;
+    preview: string;
+    timestamp: string;
+    seen: string;
+    tag: string;
+    unread?: number;
+};
 
 export type QuickFile = {
-  id: number
-  name: string
-  size: string
-  updatedAt: string
-}
-
+    id: string;
+    name: string;
+    size: string;
+    updatedAt: string;
+    url: string;
+    type: "image" | "video" | "file";
+};

@@ -25,7 +25,7 @@ export function ChatPageHeader({ activeMembersCount = 8 }: ChatPageHeaderProps) 
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button
+        {/* <Button
           outline
           className="text-sm dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
@@ -35,7 +35,7 @@ export function ChatPageHeader({ activeMembersCount = 8 }: ChatPageHeaderProps) 
         <Button color="blue" className="text-sm shadow-lg shadow-blue-500/30">
           <MessageIcon data-slot="icon" />
           New message
-        </Button>
+        </Button> */}
       </div>
     </div>
   )
