@@ -14,47 +14,26 @@ import { Dialog, DialogTitle, DialogBody, DialogActions } from "../components/di
 import { Checkbox, CheckboxField } from "../components/checkbox";
 import { Label } from "../components/fieldset";
 import type { SVGProps } from "react";
-import { Fragment, useState, useEffect, useCallback, useRef } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import { useAuth } from "~/context/auth-context";
-import { PostsApi } from "~/api/generated/posts";
-import { GroupsApi } from "~/api/generated/groups";
+import {
+    subscribeToPosts,
+    createPost,
+    updatePost,
+    deletePost,
+    publishPost,
+    uploadPostAttachment,
+    formatPostDate,
+    getPostAuthorInitials,
+    type Post,
+    type PostScope,
+    type VisibilityRole,
+    type PostStatus,
+} from "~/lib/firestore-posts";
 
 type IconProps = SVGProps<SVGSVGElement>;
 type TabType = "published" | "draft" | "scheduled";
-type PostScope = "Group" | "MultiGroup" | "ClubLobby";
 type PublishMode = "Draft" | "PublishNow" | "Schedule";
-type VisibilityRole = "AdminsAndStaff" | "Players" | "Parents" | "Public";
-
-interface Post {
-    id: string;
-    title: string | null;
-    content: string;
-    authorId: string;
-    authorName: string;
-    scope: PostScope;
-    targetGroupIds: string[];
-    targetGroupNames: string[];
-    visibilityRoles: VisibilityRole[];
-    attachments: PostAttachment[];
-    commentsEnabled: boolean;
-    isSticky: boolean;
-    postAsClub: boolean;
-    status: "Draft" | "Published" | "Scheduled";
-    publishedAt: string | null;
-    scheduledPublishAtUtc: string | null;
-    createdAt: string;
-    viewCount: number;
-    commentCount: number;
-    reactionsCount: number;
-}
-
-interface PostAttachment {
-    id: string;
-    fileName: string;
-    contentType: string;
-    url: string;
-    sizeBytes: number;
-}
 
 interface Group {
     id: string;
@@ -118,53 +97,48 @@ export default function PostsPage() {
     const [previewPost, setPreviewPost] = useState<Post | null>(null);
     const [formData, setFormData] = useState<CreatePostFormData>(defaultFormData);
     const [submitting, setSubmitting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Fetch posts
-    const fetchPosts = useCallback(async () => {
+    // Subscribe to posts from Firestore
+    useEffect(() => {
         if (!clubId) return;
 
         setLoading(true);
-        try {
-            const response = await PostsApi.getApiClubsClubIdPosts({
-                pathParams: { clubId },
-                query: {
-                    IncludeDrafts: activeTab === "draft",
-                    IncludeScheduled: activeTab === "scheduled",
-                },
-            });
+        
+        // Determine status filter based on active tab
+        let status: PostStatus | undefined;
+        if (activeTab === "published") status = "Published";
+        else if (activeTab === "draft") status = "Draft";
+        else if (activeTab === "scheduled") status = "Scheduled";
 
-            if (response.ok) {
-                const data = await response.json();
-                setPosts(data.items || data || []);
-            } else {
-                setError("Failed to fetch posts");
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to fetch posts");
-        } finally {
-            setLoading(false);
-        }
+        const unsubscribe = subscribeToPosts(
+            clubId,
+            (data) => {
+                setPosts(data);
+                setLoading(false);
+            },
+            (err) => {
+                setError(err.message);
+                setLoading(false);
+            },
+            { status }
+        );
+
+        return () => unsubscribe();
     }, [clubId, activeTab]);
 
-    // Fetch groups
-    const fetchGroups = useCallback(async () => {
-        try {
-            const response = await GroupsApi.getApiGroups({});
-            if (response.ok) {
-                const data = await response.json();
-                setGroups(data || []);
-            }
-        } catch (err) {
-            console.error("Failed to fetch groups:", err);
-        }
-    }, []);
-
+    // Groups are hardcoded for now (could be fetched from Firestore later)
     useEffect(() => {
-        void fetchPosts();
-        void fetchGroups();
-    }, [fetchPosts, fetchGroups]);
+        // Sample groups for the UI
+        setGroups([
+            { id: "group1", name: "First Team", parentId: null },
+            { id: "group2", name: "Academy U18", parentId: null },
+            { id: "group3", name: "Academy U15", parentId: null },
+            { id: "group4", name: "Women's Team", parentId: null },
+        ]);
+    }, []);
 
     // Filter posts
     const filteredPosts = posts.filter((post) => {
@@ -208,23 +182,30 @@ export default function PostsPage() {
     // Create/Update post
     const handleSubmit = async () => {
         if (!clubId || !formData.content.trim()) return;
+        if (!profile) {
+            setError("You must be logged in to create a post");
+            return;
+        }
 
         setSubmitting(true);
+        setUploadProgress(0);
+        
         try {
-            // First upload attachments if any
-            const attachmentRequests = formData.attachments.map((file) => ({
-                fileName: file.name,
-                contentType: file.type,
-                sizeBytes: file.size,
-            }));
+            const authorName = profile.displayName || profile.email || "Unknown User";
+            const authorId = profile.id || "";
 
-            const body = {
+            // Find group names for selected group IDs
+            const targetGroupNames = formData.targetGroupIds
+                .map(id => groups.find(g => g.id === id)?.name)
+                .filter(Boolean) as string[];
+
+            const payload = {
                 title: formData.title || null,
                 content: formData.content,
                 scope: formData.scope,
-                targetGroupIds: formData.scope === "ClubLobby" ? null : formData.targetGroupIds,
+                targetGroupIds: formData.scope === "ClubLobby" ? [] : formData.targetGroupIds,
+                targetGroupNames: formData.scope === "ClubLobby" ? [] : targetGroupNames,
                 visibilityRoles: formData.visibilityRoles,
-                attachments: attachmentRequests.length > 0 ? attachmentRequests : null,
                 commentsEnabled: formData.commentsEnabled,
                 notifyRecipients: formData.notifyRecipients,
                 isSticky: formData.isSticky,
@@ -233,28 +214,35 @@ export default function PostsPage() {
                 scheduledPublishAtUtc: formData.publishMode === "Schedule" ? formData.scheduledPublishAtUtc : null,
             };
 
-            let response: Response;
+            let postId: string;
+            
             if (editingPost) {
-                response = await PostsApi.putApiClubsClubIdPostsPostId({
-                    pathParams: { clubId, postId: editingPost.id },
-                    body,
-                });
+                await updatePost(clubId, editingPost.id, payload);
+                postId = editingPost.id;
             } else {
-                response = await PostsApi.postApiClubsClubIdPosts({
-                    pathParams: { clubId },
-                    body,
-                });
+                postId = await createPost(clubId, authorId, authorName, payload);
             }
 
-            if (response.ok) {
-                setShowCreateDialog(false);
-                setEditingPost(null);
-                setFormData(defaultFormData);
-                void fetchPosts();
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                setError(errorData.message || "Failed to save post");
+            // Upload attachments if any
+            if (formData.attachments.length > 0) {
+                for (let i = 0; i < formData.attachments.length; i++) {
+                    const file = formData.attachments[i];
+                    await uploadPostAttachment(
+                        clubId,
+                        postId,
+                        file,
+                        (progress) => {
+                            const overallProgress = ((i + progress / 100) / formData.attachments.length) * 100;
+                            setUploadProgress(overallProgress);
+                        }
+                    );
+                }
             }
+
+            setShowCreateDialog(false);
+            setEditingPost(null);
+            setFormData(defaultFormData);
+            setUploadProgress(0);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save post");
         } finally {
@@ -267,15 +255,7 @@ export default function PostsPage() {
         if (!confirm("Are you sure you want to delete this post?")) return;
 
         try {
-            const response = await PostsApi.deleteApiClubsClubIdPostsPostId({
-                pathParams: { clubId, postId: post.id },
-            });
-
-            if (response.ok) {
-                void fetchPosts();
-            } else {
-                setError("Failed to delete post");
-            }
+            await deletePost(clubId, post.id);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to delete post");
         }
@@ -284,15 +264,7 @@ export default function PostsPage() {
     // Publish draft
     const handlePublish = async (post: Post) => {
         try {
-            const response = await PostsApi.postApiClubsClubIdPostsPostIdPublish({
-                pathParams: { clubId, postId: post.id },
-            });
-
-            if (response.ok) {
-                void fetchPosts();
-            } else {
-                setError("Failed to publish post");
-            }
+            await publishPost(clubId, post.id);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to publish post");
         }
@@ -301,6 +273,14 @@ export default function PostsPage() {
     // Open edit dialog
     const openEditDialog = (post: Post) => {
         setEditingPost(post);
+        
+        // Convert Timestamp to string for datetime-local input
+        let scheduledStr = "";
+        if (post.scheduledPublishAtUtc) {
+            const date = post.scheduledPublishAtUtc.toDate ? post.scheduledPublishAtUtc.toDate() : new Date(post.scheduledPublishAtUtc as unknown as string);
+            scheduledStr = date.toISOString().slice(0, 16);
+        }
+        
         setFormData({
             title: post.title || "",
             content: post.content,
@@ -313,32 +293,17 @@ export default function PostsPage() {
             isSticky: post.isSticky,
             postAsClub: post.postAsClub,
             publishMode: post.status === "Draft" ? "Draft" : post.status === "Scheduled" ? "Schedule" : "PublishNow",
-            scheduledPublishAtUtc: post.scheduledPublishAtUtc || "",
+            scheduledPublishAtUtc: scheduledStr,
         });
         setShowCreateDialog(true);
     };
 
-    // Get user initials
-    const getInitials = (name: string) => {
-        return name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
-    };
+    // Get user initials - use the helper from firestore-posts
+    const getInitials = getPostAuthorInitials;
 
-    // Format date
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return "-";
-        const date = new Date(dateString);
-        return date.toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-        });
+    // Format date - use the helper from firestore-posts
+    const formatDate = (timestamp: unknown) => {
+        return formatPostDate(timestamp as import("firebase/firestore").Timestamp | null);
     };
 
     const getVisibilityIcon = (roles: VisibilityRole[], type: string) => {

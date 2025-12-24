@@ -1,6 +1,6 @@
 import type { Route } from "./+types/index";
 import type { SVGProps } from "react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { DashboardLayout } from "../components/dashboard-layout";
 import { Heading, Subheading } from "../components/heading";
@@ -12,33 +12,14 @@ import { Select } from "../components/select";
 import { DescriptionList, DescriptionTerm, DescriptionDetails } from "../components/description-list";
 import { Divider } from "../components/divider";
 import { useAuth } from "~/context/auth-context";
-import { PostsApi } from "~/api/generated/posts";
+import {
+  subscribeToPosts,
+  getTimeSincePost,
+  getPostAuthorInitials,
+  type Post,
+} from "~/lib/firestore-posts";
 
 type IconProps = SVGProps<SVGSVGElement>;
-
-interface PostAttachment {
-  id: string;
-  fileName: string;
-  contentType: string;
-  url: string;
-  sizeBytes: number;
-}
-
-interface Post {
-  id: string;
-  title: string | null;
-  content: string;
-  authorId: string;
-  authorName: string;
-  postAsClub: boolean;
-  targetGroupNames: string[];
-  attachments: PostAttachment[];
-  publishedAt: string | null;
-  createdAt: string;
-  viewCount: number;
-  commentCount: number;
-  reactionsCount: number;
-}
 
 type Game = {
   id: number;
@@ -89,31 +70,31 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
-  // Fetch posts
-  const fetchPosts = useCallback(async () => {
-    if (!activeClub?.id) return;
+  // Subscribe to posts from Firestore
+  useEffect(() => {
+    if (!activeClub?.id) {
+      setLoadingPosts(false);
+      return;
+    }
 
     setLoadingPosts(true);
-    try {
-      const response = await PostsApi.getApiClubsClubIdPosts({
-        pathParams: { clubId: activeClub.id },
-        query: { PageSize: 5 },
-      });
+    
+    const unsubscribe = subscribeToPosts(
+      activeClub.id,
+      (data) => {
+        // Limit to 5 posts for the home page wall
+        setPosts(data.slice(0, 5));
+        setLoadingPosts(false);
+      },
+      (err) => {
+        console.error("Failed to fetch posts:", err);
+        setLoadingPosts(false);
+      },
+      { status: "Published" }
+    );
 
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data.items || data || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch posts:", err);
-    } finally {
-      setLoadingPosts(false);
-    }
+    return () => unsubscribe();
   }, [activeClub?.id]);
-
-  useEffect(() => {
-    void fetchPosts();
-  }, [fetchPosts]);
 
   return (
     <DashboardLayout>
@@ -256,32 +237,10 @@ function LastGamesCard() {
 function WallCard({ posts, loading, clubName }: { posts: Post[]; loading: boolean; clubName: string }) {
   const navigate = useNavigate();
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = getPostAuthorInitials;
 
-  const formatTime = (dateString: string | null) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    const timeStr = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-    if (diffDays === 0) {
-      return `Today · ${timeStr}`;
-    } else if (diffDays === 1) {
-      return `Yesterday · ${timeStr}`;
-    } else if (diffDays < 7) {
-      return `${date.toLocaleDateString("en-US", { weekday: "long" })} · ${timeStr}`;
-    } else {
-      return `${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} · ${timeStr}`;
-    }
+  const formatTime = (timestamp: unknown) => {
+    return getTimeSincePost(timestamp as import("firebase/firestore").Timestamp | null);
   };
 
   return (
