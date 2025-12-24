@@ -71,7 +71,14 @@ const navigationSections: NavigationSection[] = [
       { label: "Registrations", icon: ClipboardIcon, href: "/registrations" },
       { label: "Posts", icon: MegaphoneIcon, href: "/posts" },
       { label: "Scheduling", icon: ClockIcon },
-      { label: "Development", icon: TrophyIcon },
+      {
+        label: "Development",
+        icon: TrophyIcon,
+        subItems: [
+          { label: "Training library", href: "/development/training-library" },
+          { label: "Videos", href: "/development/videos" },
+        ]
+      },
       {
         label: "Games",
         icon: FlagIcon,

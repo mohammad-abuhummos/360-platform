@@ -65,9 +65,6 @@ interface Annotation {
     scaleY?: number;
     // Keyframe animation data
     keyframes?: Keyframe[];
-    // Pause Scene annotation - video pauses when this annotation appears
-    isPauseScene?: boolean;
-    pauseSceneDuration?: number; // How long to pause (in seconds)
 }
 
 type Tool = 'select' | 'text' | 'circle' | 'spotlight' | 'line' | 'arrow' | 'connection' | 'polygon';
@@ -552,27 +549,6 @@ export default function VideoAnalyzeStone() {
     const [resizingAnnotation, setResizingAnnotation] = useState<{ id: string; edge: 'start' | 'end' } | null>(null);
     const [draggingAnnotation, setDraggingAnnotation] = useState<{ id: string; startX: number; originalStartTime: number } | null>(null);
     const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-
-    // Properties Panel state
-    const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
-    const [propertiesPanelItem, setPropertiesPanelItem] = useState<{ type: 'clip' | 'annotation'; id: string } | null>(null);
-
-    // Context Menu state
-    const [contextMenu, setContextMenu] = useState<{
-        show: boolean;
-        x: number;
-        y: number;
-        type: 'clip' | 'annotation';
-        id: string;
-    } | null>(null);
-
-    // Pause Scene state
-    const [isPauseSceneMode, setIsPauseSceneMode] = useState(false);
-    const [pauseSceneStartTime, setPauseSceneStartTime] = useState<number | null>(null);
-    const [pauseSceneDuration, setPauseSceneDuration] = useState(3); // Default 3 seconds pause
-
-    // Track if a drag operation occurred (to prevent click after drag)
-    const wasDraggingRef = useRef(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1208,15 +1184,12 @@ export default function VideoAnalyzeStone() {
             x: drawStart.x,
             y: drawStart.y,
             fill: activeTool === 'spotlight' ? 'rgba(255, 255, 0, 0.3)' : 'transparent',
-            stroke: isPauseSceneMode ? '#ff6b6b' : '#00d4ff', // Red stroke for pause scene annotations
+            stroke: '#00d4ff',
             strokeWidth: 3,
             opacity: 1,
             rotation: 0,
             scaleX: 1,
             scaleY: 1,
-            // Mark as pause scene annotation if in pause scene mode
-            isPauseScene: isPauseSceneMode,
-            pauseSceneDuration: isPauseSceneMode ? pauseSceneDuration : undefined,
         };
 
         switch (activeTool) {
@@ -1246,10 +1219,7 @@ export default function VideoAnalyzeStone() {
         setIsDrawing(false);
         setDrawStart(null);
         setDrawCurrent(null);
-        // Don't switch to select tool if in pause scene mode - allow continuous drawing
-        if (!isPauseSceneMode) {
-            setActiveTool('select');
-        }
+        setActiveTool('select');
     };
 
     // Get drawing preview props
@@ -1363,25 +1333,19 @@ export default function VideoAnalyzeStone() {
                 y: textInputPos.y,
                 text: textInput,
                 fontSize: 24,
-                fill: isPauseSceneMode ? '#ff6b6b' : '#ffffff', // Red for pause scene
+                fill: '#ffffff',
                 stroke: '#000000',
                 strokeWidth: 0.5,
                 opacity: 1,
                 rotation: 0,
                 scaleX: 1,
                 scaleY: 1,
-                // Mark as pause scene annotation if in pause scene mode
-                isPauseScene: isPauseSceneMode,
-                pauseSceneDuration: isPauseSceneMode ? pauseSceneDuration : undefined,
             };
             setAnnotations(prev => [...prev, newAnnotation]);
         }
         setTextInput("");
         setShowTextInput(false);
-        // Don't switch to select tool if in pause scene mode
-        if (!isPauseSceneMode) {
-            setActiveTool('select');
-        }
+        setActiveTool('select');
     };
 
     // Update annotation
@@ -1521,7 +1485,6 @@ export default function VideoAnalyzeStone() {
         e.stopPropagation();
         const clip = clips.find(c => c.id === clipId);
         if (clip) {
-            wasDraggingRef.current = false; // Reset at start, will be set true if actual drag happens
             setDraggingClip({
                 id: clipId,
                 startX: e.clientX,
@@ -1541,7 +1504,6 @@ export default function VideoAnalyzeStone() {
         const newTime = (percentage * visibleDuration) + timelineScroll;
 
         if (resizingClip) {
-            wasDraggingRef.current = true; // Mark as dragging during resize
             setClips(prev => prev.map(clip => {
                 if (clip.id === resizingClip.id) {
                     if (resizingClip.edge === 'start') {
@@ -1568,10 +1530,6 @@ export default function VideoAnalyzeStone() {
             const clip = clips.find(c => c.id === draggingClip.id);
             if (clip) {
                 const deltaX = e.clientX - draggingClip.startX;
-                // Mark as dragged if moved more than 3 pixels
-                if (Math.abs(deltaX) > 3) {
-                    wasDraggingRef.current = true;
-                }
                 const deltaTime = (deltaX / rect.width) * visibleDuration;
                 const newStartTime = Math.max(0, Math.min(duration - clip.duration, draggingClip.originalStartTime + deltaTime));
                 const newEndTime = newStartTime + clip.duration;
@@ -1591,7 +1549,6 @@ export default function VideoAnalyzeStone() {
 
         // Handle annotation resizing
         if (resizingAnnotation) {
-            wasDraggingRef.current = true; // Mark as dragging during resize
             setAnnotations(prev => prev.map(ann => {
                 if (ann.id === resizingAnnotation.id) {
                     if (resizingAnnotation.edge === 'start') {
@@ -1612,10 +1569,6 @@ export default function VideoAnalyzeStone() {
             if (ann) {
                 const annDuration = ann.endTime - ann.startTime;
                 const deltaX = e.clientX - draggingAnnotation.startX;
-                // Mark as dragged if moved more than 3 pixels
-                if (Math.abs(deltaX) > 3) {
-                    wasDraggingRef.current = true;
-                }
                 const deltaTime = (deltaX / rect.width) * visibleDuration;
                 const newStartTime = Math.max(0, Math.min(duration - annDuration, draggingAnnotation.originalStartTime + deltaTime));
                 const newEndTime = newStartTime + annDuration;
@@ -1663,7 +1616,6 @@ export default function VideoAnalyzeStone() {
         e.stopPropagation();
         const ann = annotations.find(a => a.id === annotationId);
         if (ann) {
-            wasDraggingRef.current = false; // Reset at start, will be set true if actual drag happens
             setDraggingAnnotation({
                 id: annotationId,
                 startX: e.clientX,
@@ -1691,140 +1643,6 @@ export default function VideoAnalyzeStone() {
     // Get annotations for a specific layer
     const getAnnotationsForLayer = (layerType: string) => {
         return annotations.filter(ann => ann.type === layerType);
-    };
-
-    // Open properties panel for timeline item
-    const openPropertiesPanel = useCallback((type: 'clip' | 'annotation', id: string) => {
-        setPropertiesPanelItem({ type, id });
-        setShowPropertiesPanel(true);
-        if (type === 'clip') {
-            setSelectedClip(id);
-        } else {
-            setSelectedAnnotationId(id);
-        }
-    }, []);
-
-    // Close properties panel
-    const closePropertiesPanel = useCallback(() => {
-        setShowPropertiesPanel(false);
-        setPropertiesPanelItem(null);
-    }, []);
-
-    // Open context menu for timeline item
-    const openContextMenu = useCallback((e: React.MouseEvent, type: 'clip' | 'annotation', id: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setContextMenu({
-            show: true,
-            x: e.clientX,
-            y: e.clientY,
-            type,
-            id
-        });
-        // Select the item
-        if (type === 'clip') {
-            setSelectedClip(id);
-        } else {
-            setSelectedAnnotationId(id);
-        }
-    }, []);
-
-    // Close context menu
-    const closeContextMenu = useCallback(() => {
-        setContextMenu(null);
-    }, []);
-
-    // Handle context menu edit action
-    const handleContextMenuEdit = useCallback(() => {
-        if (contextMenu) {
-            openPropertiesPanel(contextMenu.type, contextMenu.id);
-            closeContextMenu();
-        }
-    }, [contextMenu, openPropertiesPanel, closeContextMenu]);
-
-    // Enter Pause Scene mode
-    const enterPauseSceneMode = useCallback(() => {
-        if (!videoFile || isPauseSceneMode) return;
-
-        // Pause the video
-        if (videoRef.current && isPlaying) {
-            videoRef.current.pause();
-            setIsPlaying(false);
-        }
-
-        setIsPauseSceneMode(true);
-        setPauseSceneStartTime(currentTime);
-    }, [videoFile, isPauseSceneMode, isPlaying, currentTime]);
-
-    // Exit Pause Scene mode
-    const exitPauseSceneMode = useCallback(() => {
-        setIsPauseSceneMode(false);
-        setPauseSceneStartTime(null);
-    }, []);
-
-    // Create pause scene annotation
-    const createPauseSceneAnnotation = useCallback((annotation: Omit<Annotation, 'isPauseScene' | 'pauseSceneDuration'>) => {
-        const pauseSceneAnnotation: Annotation = {
-            ...annotation,
-            isPauseScene: true,
-            pauseSceneDuration: pauseSceneDuration,
-        };
-        setAnnotations(prev => [...prev, pauseSceneAnnotation]);
-        return pauseSceneAnnotation;
-    }, [pauseSceneDuration]);
-
-    // Handle context menu delete action
-    const handleContextMenuDelete = useCallback(() => {
-        if (contextMenu) {
-            if (contextMenu.type === 'clip') {
-                deleteClip(contextMenu.id);
-            } else {
-                deleteAnnotation(contextMenu.id);
-            }
-            closeContextMenu();
-        }
-    }, [contextMenu, closeContextMenu]);
-
-    // Handle context menu jump to start action
-    const handleContextMenuJumpToStart = useCallback(() => {
-        if (contextMenu) {
-            const item = contextMenu.type === 'clip'
-                ? clips.find(c => c.id === contextMenu.id)
-                : annotations.find(a => a.id === contextMenu.id);
-            if (item) {
-                seekTo(item.startTime);
-            }
-            closeContextMenu();
-        }
-    }, [contextMenu, clips, annotations, seekTo, closeContextMenu]);
-
-    // Close context menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = () => {
-            if (contextMenu?.show) {
-                closeContextMenu();
-            }
-        };
-
-        if (contextMenu?.show) {
-            document.addEventListener('click', handleClickOutside);
-            document.addEventListener('contextmenu', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
-            document.removeEventListener('contextmenu', handleClickOutside);
-        };
-    }, [contextMenu?.show, closeContextMenu]);
-
-    // Get current properties panel item data
-    const getPropertiesPanelData = () => {
-        if (!propertiesPanelItem) return null;
-        if (propertiesPanelItem.type === 'clip') {
-            return clips.find(c => c.id === propertiesPanelItem.id);
-        } else {
-            return annotations.find(a => a.id === propertiesPanelItem.id);
-        }
     };
 
     // Smooth zoom
@@ -1892,17 +1710,6 @@ export default function VideoAnalyzeStone() {
                 return;
             }
 
-            // Ctrl+Shift to enter/exit Pause Scene mode
-            if (e.ctrlKey && e.shiftKey && !e.code.startsWith('Arrow')) {
-                e.preventDefault();
-                if (isPauseSceneMode) {
-                    exitPauseSceneMode();
-                } else {
-                    enterPauseSceneMode();
-                }
-                return;
-            }
-
             if (e.code === 'Space') {
                 e.preventDefault();
                 togglePlayPause();
@@ -1928,25 +1735,17 @@ export default function VideoAnalyzeStone() {
                 }
             } else if (e.code === 'Escape') {
                 e.preventDefault();
-                if (isPauseSceneMode) {
-                    exitPauseSceneMode();
-                } else if (contextMenu?.show) {
-                    closeContextMenu();
-                } else if (showPropertiesPanel) {
-                    closePropertiesPanel();
-                } else {
-                    setActiveTool('select');
-                    setSelectedAnnotationId(null);
-                    setShowTextInput(false);
-                    setTextInput("");
-                    transformerRef.current?.nodes([]);
-                }
+                setActiveTool('select');
+                setSelectedAnnotationId(null);
+                setShowTextInput(false);
+                setTextInput("");
+                transformerRef.current?.nodes([]);
             }
         };
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, togglePlayPause, skip, createClip, deleteAnnotation, showPropertiesPanel, closePropertiesPanel, contextMenu, closeContextMenu, isPauseSceneMode, enterPauseSceneMode, exitPauseSceneMode]);
+    }, [videoFile, currentTime, zoomLevel, timelineScroll, duration, selectedAnnotationId, togglePlayPause, skip, createClip, deleteAnnotation]);
 
     // Update clip
     const updateClip = (clipId: string, updates: Partial<Clip>) => {
@@ -2131,642 +1930,6 @@ export default function VideoAnalyzeStone() {
                 )}
             </AnimatePresence>
 
-            {/* Properties Panel - Side Popup */}
-            <AnimatePresence>
-                {showPropertiesPanel && propertiesPanelItem && (
-                    <motion.div
-                        className="fixed inset-0 z-50 flex justify-end"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        {/* Backdrop */}
-                        <motion.div
-                            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                            onClick={closePropertiesPanel}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                        />
-
-                        {/* Panel */}
-                        <motion.div
-                            className="relative w-96 max-w-full bg-[#12121a] border-l border-white/10 shadow-2xl overflow-y-auto"
-                            initial={{ x: 400 }}
-                            animate={{ x: 0 }}
-                            exit={{ x: 400 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        >
-                            {/* Header */}
-                            <div className="sticky top-0 bg-[#12121a]/95 backdrop-blur-sm border-b border-white/10 p-4 flex items-center justify-between z-10">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${propertiesPanelItem.type === 'clip' ? 'bg-blue-500/20 text-blue-400' : 'bg-cyan-500/20 text-cyan-400'}`}>
-                                        {propertiesPanelItem.type === 'clip' ? Icons.clips : getLayerIcon(annotations.find(a => a.id === propertiesPanelItem.id)?.type || 'circle')}
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-bold text-white">
-                                            {propertiesPanelItem.type === 'clip' ? 'Edit Clip' : 'Edit Annotation'}
-                                        </h2>
-                                        <p className="text-xs text-gray-500">
-                                            {propertiesPanelItem.type === 'clip'
-                                                ? clips.find(c => c.id === propertiesPanelItem.id)?.name
-                                                : annotations.find(a => a.id === propertiesPanelItem.id)?.type}
-                                        </p>
-                                    </div>
-                                </div>
-                                <motion.button
-                                    onClick={closePropertiesPanel}
-                                    className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                >
-                                    {Icons.x}
-                                </motion.button>
-                            </div>
-
-                            {/* Content */}
-                            <div className="p-4 space-y-6">
-                                {propertiesPanelItem.type === 'clip' ? (
-                                    // Clip Properties
-                                    (() => {
-                                        const clip = clips.find(c => c.id === propertiesPanelItem.id);
-                                        if (!clip) return null;
-                                        return (
-                                            <>
-                                                {/* Clip Name */}
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Clip Name</label>
-                                                    <input
-                                                        type="text"
-                                                        value={clip.name}
-                                                        onChange={(e) => updateClip(clip.id, { name: e.target.value })}
-                                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-                                                    />
-                                                </div>
-
-                                                {/* Duration Section */}
-                                                <div className="space-y-3">
-                                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                                        {Icons.clock}
-                                                        Duration
-                                                    </label>
-
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs text-gray-500">Start Time (s)</label>
-                                                            <input
-                                                                type="number"
-                                                                value={clip.startTime.toFixed(2)}
-                                                                onChange={(e) => {
-                                                                    const value = parseFloat(e.target.value);
-                                                                    if (!isNaN(value) && value >= 0 && value < clip.endTime) {
-                                                                        updateClip(clip.id, {
-                                                                            startTime: value,
-                                                                            duration: clip.endTime - value
-                                                                        });
-                                                                    }
-                                                                }}
-                                                                min={0}
-                                                                max={clip.endTime - 0.1}
-                                                                step={0.1}
-                                                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-cyan-500/50 transition-all"
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs text-gray-500">End Time (s)</label>
-                                                            <input
-                                                                type="number"
-                                                                value={clip.endTime.toFixed(2)}
-                                                                onChange={(e) => {
-                                                                    const value = parseFloat(e.target.value);
-                                                                    if (!isNaN(value) && value > clip.startTime && value <= duration) {
-                                                                        updateClip(clip.id, {
-                                                                            endTime: value,
-                                                                            duration: value - clip.startTime
-                                                                        });
-                                                                    }
-                                                                }}
-                                                                min={clip.startTime + 0.1}
-                                                                max={duration}
-                                                                step={0.1}
-                                                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-cyan-500/50 transition-all"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Duration Display */}
-                                                    <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
-                                                        <span className="text-xs text-gray-500">Total Duration</span>
-                                                        <span className="text-sm font-mono text-cyan-400">{clip.duration.toFixed(2)}s</span>
-                                                    </div>
-
-                                                    {/* Quick Duration Buttons */}
-                                                    <div className="flex gap-2">
-                                                        {[5, 10, 15, 20, 30].map((dur) => (
-                                                            <motion.button
-                                                                key={dur}
-                                                                onClick={() => {
-                                                                    const newEndTime = Math.min(clip.startTime + dur, duration);
-                                                                    updateClip(clip.id, {
-                                                                        endTime: newEndTime,
-                                                                        duration: newEndTime - clip.startTime
-                                                                    });
-                                                                }}
-                                                                className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${Math.abs(clip.duration - dur) < 0.5
-                                                                    ? 'bg-cyan-500/30 text-cyan-400 border border-cyan-500/50'
-                                                                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-transparent'
-                                                                    }`}
-                                                                whileHover={{ scale: 1.05 }}
-                                                                whileTap={{ scale: 0.95 }}
-                                                            >
-                                                                {dur}s
-                                                            </motion.button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Description */}
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Description</label>
-                                                    <textarea
-                                                        value={clip.description || ''}
-                                                        onChange={(e) => updateClip(clip.id, { description: e.target.value })}
-                                                        placeholder="Add a description..."
-                                                        rows={3}
-                                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 resize-none focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-                                                    />
-                                                </div>
-
-                                                {/* Jump to clip */}
-                                                <motion.button
-                                                    onClick={() => seekTo(clip.startTime)}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition-all"
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                >
-                                                    {Icons.play}
-                                                    Jump to Start
-                                                </motion.button>
-
-                                                {/* Delete */}
-                                                <motion.button
-                                                    onClick={() => {
-                                                        deleteClip(clip.id);
-                                                        closePropertiesPanel();
-                                                    }}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-medium transition-all"
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                >
-                                                    {Icons.trash}
-                                                    Delete Clip
-                                                </motion.button>
-                                            </>
-                                        );
-                                    })()
-                                ) : (
-                                    // Annotation Properties
-                                    (() => {
-                                        const ann = annotations.find(a => a.id === propertiesPanelItem.id);
-                                        if (!ann) return null;
-                                        return (
-                                            <>
-                                                {/* Type indicator */}
-                                                <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
-                                                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${ann.fill || ann.stroke}20` }}>
-                                                        {getLayerIcon(ann.type)}
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-sm font-medium text-white capitalize">{ann.type}</span>
-                                                        <p className="text-xs text-gray-500">Annotation Tool</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Colors Section */}
-                                                <div className="space-y-3">
-                                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <circle cx="12" cy="12" r="10" />
-                                                            <circle cx="12" cy="12" r="4" fill="currentColor" />
-                                                        </svg>
-                                                        Colors
-                                                    </label>
-
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        {/* Fill Color */}
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs text-gray-500">Fill Color</label>
-                                                            <div className="relative">
-                                                                <input
-                                                                    type="color"
-                                                                    value={ann.fill === 'transparent' ? '#000000' : (ann.fill || '#00d4ff')}
-                                                                    onChange={(e) => updateAnnotation(ann.id, { fill: e.target.value })}
-                                                                    className="w-full h-12 rounded-lg cursor-pointer border-2 border-white/10 hover:border-white/30 transition-colors"
-                                                                />
-                                                                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                                                    <span className="text-[10px] font-mono text-white/70 bg-black/50 px-1.5 py-0.5 rounded">
-                                                                        {ann.fill === 'transparent' ? 'None' : (ann.fill || '#00d4ff').toUpperCase()}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <motion.button
-                                                                onClick={() => updateAnnotation(ann.id, { fill: 'transparent' })}
-                                                                className="w-full py-1.5 text-xs bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 transition-all"
-                                                                whileTap={{ scale: 0.95 }}
-                                                            >
-                                                                No Fill
-                                                            </motion.button>
-                                                        </div>
-
-                                                        {/* Stroke Color */}
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs text-gray-500">Stroke Color</label>
-                                                            <div className="relative">
-                                                                <input
-                                                                    type="color"
-                                                                    value={ann.stroke || '#00d4ff'}
-                                                                    onChange={(e) => updateAnnotation(ann.id, { stroke: e.target.value })}
-                                                                    className="w-full h-12 rounded-lg cursor-pointer border-2 border-white/10 hover:border-white/30 transition-colors"
-                                                                />
-                                                                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                                                    <span className="text-[10px] font-mono text-white/70 bg-black/50 px-1.5 py-0.5 rounded">
-                                                                        {(ann.stroke || '#00d4ff').toUpperCase()}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Color Presets */}
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-xs text-gray-500">Quick Colors</label>
-                                                        <div className="flex gap-2 flex-wrap">
-                                                            {[
-                                                                '#00d4ff', '#3b82f6', '#8b5cf6', '#ec4899',
-                                                                '#ef4444', '#f97316', '#fbbf24', '#22c55e',
-                                                                '#ffffff', '#000000'
-                                                            ].map((color) => (
-                                                                <motion.button
-                                                                    key={color}
-                                                                    onClick={() => updateAnnotation(ann.id, { fill: color, stroke: color })}
-                                                                    className="w-8 h-8 rounded-lg border-2 border-white/20 hover:border-white/50 hover:scale-110 transition-all"
-                                                                    style={{ backgroundColor: color }}
-                                                                    whileTap={{ scale: 0.9 }}
-                                                                    title={color}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Stroke Width */}
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stroke Width</label>
-                                                        <span className="text-sm font-mono text-cyan-400">{ann.strokeWidth || 3}px</span>
-                                                    </div>
-                                                    <input
-                                                        type="range"
-                                                        min={0}
-                                                        max={20}
-                                                        step={1}
-                                                        value={ann.strokeWidth || 3}
-                                                        onChange={(e) => updateAnnotation(ann.id, { strokeWidth: parseInt(e.target.value) })}
-                                                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                                                    />
-                                                </div>
-
-                                                {/* Opacity */}
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Opacity</label>
-                                                        <span className="text-sm font-mono text-cyan-400">{Math.round((ann.opacity || 1) * 100)}%</span>
-                                                    </div>
-                                                    <input
-                                                        type="range"
-                                                        min={0}
-                                                        max={1}
-                                                        step={0.05}
-                                                        value={ann.opacity || 1}
-                                                        onChange={(e) => updateAnnotation(ann.id, { opacity: parseFloat(e.target.value) })}
-                                                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                                                    />
-                                                </div>
-
-                                                {/* Duration Section */}
-                                                <div className="space-y-3">
-                                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                                        {Icons.clock}
-                                                        Duration
-                                                    </label>
-
-                                                    <div className="grid grid-cols-2 gap-3">
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs text-gray-500">Start Time (s)</label>
-                                                            <input
-                                                                type="number"
-                                                                value={ann.startTime.toFixed(2)}
-                                                                onChange={(e) => {
-                                                                    const value = parseFloat(e.target.value);
-                                                                    if (!isNaN(value) && value >= 0 && value < ann.endTime) {
-                                                                        updateAnnotation(ann.id, { startTime: value });
-                                                                    }
-                                                                }}
-                                                                min={0}
-                                                                max={ann.endTime - 0.1}
-                                                                step={0.1}
-                                                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-cyan-500/50 transition-all"
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs text-gray-500">End Time (s)</label>
-                                                            <input
-                                                                type="number"
-                                                                value={ann.endTime.toFixed(2)}
-                                                                onChange={(e) => {
-                                                                    const value = parseFloat(e.target.value);
-                                                                    if (!isNaN(value) && value > ann.startTime && value <= duration) {
-                                                                        updateAnnotation(ann.id, { endTime: value });
-                                                                    }
-                                                                }}
-                                                                min={ann.startTime + 0.1}
-                                                                max={duration}
-                                                                step={0.1}
-                                                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-cyan-500/50 transition-all"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Duration Display */}
-                                                    <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
-                                                        <span className="text-xs text-gray-500">Total Duration</span>
-                                                        <span className="text-sm font-mono text-cyan-400">{(ann.endTime - ann.startTime).toFixed(2)}s</span>
-                                                    </div>
-
-                                                    {/* Quick Duration Buttons */}
-                                                    <div className="flex gap-2">
-                                                        {[2, 3, 5, 10, 15].map((dur) => (
-                                                            <motion.button
-                                                                key={dur}
-                                                                onClick={() => {
-                                                                    const newEndTime = Math.min(ann.startTime + dur, duration);
-                                                                    updateAnnotation(ann.id, { endTime: newEndTime });
-                                                                }}
-                                                                className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${Math.abs((ann.endTime - ann.startTime) - dur) < 0.5
-                                                                    ? 'bg-cyan-500/30 text-cyan-400 border border-cyan-500/50'
-                                                                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-transparent'
-                                                                    }`}
-                                                                whileHover={{ scale: 1.05 }}
-                                                                whileTap={{ scale: 0.95 }}
-                                                            >
-                                                                {dur}s
-                                                            </motion.button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Text content (for text annotations) */}
-                                                {ann.type === 'text' && (
-                                                    <div className="space-y-2">
-                                                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Text Content</label>
-                                                        <input
-                                                            type="text"
-                                                            value={ann.text || ''}
-                                                            onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-                                                        />
-                                                        <div className="space-y-2">
-                                                            <label className="text-xs text-gray-500">Font Size</label>
-                                                            <input
-                                                                type="range"
-                                                                min={12}
-                                                                max={72}
-                                                                value={ann.fontSize || 24}
-                                                                onChange={(e) => updateAnnotation(ann.id, { fontSize: parseInt(e.target.value) })}
-                                                                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-                                                            />
-                                                            <div className="text-right text-xs text-gray-400">{ann.fontSize || 24}px</div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Pause Scene settings */}
-                                                <div className="space-y-3">
-                                                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-red-400">
-                                                            <rect x="6" y="4" width="4" height="16" rx="1" />
-                                                            <rect x="14" y="4" width="4" height="16" rx="1" />
-                                                        </svg>
-                                                        Pause Scene
-                                                    </label>
-
-                                                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm text-gray-300">Pause on appear</span>
-                                                            {ann.isPauseScene && (
-                                                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-red-500/20 text-red-400 rounded">
-                                                                    {ann.pauseSceneDuration || 3}s
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <motion.button
-                                                            onClick={() => updateAnnotation(ann.id, {
-                                                                isPauseScene: !ann.isPauseScene,
-                                                                pauseSceneDuration: ann.isPauseScene ? undefined : 3
-                                                            })}
-                                                            className={`relative w-12 h-6 rounded-full transition-colors ${ann.isPauseScene ? 'bg-red-500' : 'bg-white/20'
-                                                                }`}
-                                                            whileTap={{ scale: 0.95 }}
-                                                        >
-                                                            <motion.div
-                                                                className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow"
-                                                                animate={{ x: ann.isPauseScene ? 24 : 0 }}
-                                                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                                            />
-                                                        </motion.button>
-                                                    </div>
-
-                                                    {ann.isPauseScene && (
-                                                        <div className="space-y-2">
-                                                            <label className="text-xs text-gray-500">Pause Duration</label>
-                                                            <div className="flex gap-2">
-                                                                {[1, 2, 3, 5, 10].map((dur) => (
-                                                                    <motion.button
-                                                                        key={dur}
-                                                                        onClick={() => updateAnnotation(ann.id, { pauseSceneDuration: dur })}
-                                                                        className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${ann.pauseSceneDuration === dur
-                                                                            ? 'bg-red-500/30 text-red-400 border border-red-500/50'
-                                                                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-transparent'
-                                                                            }`}
-                                                                        whileHover={{ scale: 1.05 }}
-                                                                        whileTap={{ scale: 0.95 }}
-                                                                    >
-                                                                        {dur}s
-                                                                    </motion.button>
-                                                                ))}
-                                                            </div>
-                                                            <p className="text-[10px] text-gray-600">
-                                                                Video will pause for this duration when annotation appears in preview
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Keyframes info */}
-                                                {ann.keyframes && ann.keyframes.length > 0 && (
-                                                    <div className="space-y-2">
-                                                        <div className="flex items-center justify-between">
-                                                            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                                                <motion.div
-                                                                    className="w-2 h-2 rounded-full bg-red-400"
-                                                                    animate={{ scale: [1, 1.2, 1] }}
-                                                                    transition={{ duration: 1, repeat: Infinity }}
-                                                                />
-                                                                Motion Recording
-                                                            </label>
-                                                            <span className="text-xs text-purple-400">{ann.keyframes.length} keyframes</span>
-                                                        </div>
-                                                        <motion.button
-                                                            onClick={() => clearKeyframes(ann.id)}
-                                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all"
-                                                            whileHover={{ scale: 1.02 }}
-                                                            whileTap={{ scale: 0.98 }}
-                                                        >
-                                                            {Icons.trash}
-                                                            Clear Keyframes
-                                                        </motion.button>
-                                                    </div>
-                                                )}
-
-                                                {/* Jump to annotation */}
-                                                <motion.button
-                                                    onClick={() => seekTo(ann.startTime)}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition-all"
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                >
-                                                    {Icons.play}
-                                                    Jump to Start
-                                                </motion.button>
-
-                                                {/* Delete */}
-                                                <motion.button
-                                                    onClick={() => {
-                                                        deleteAnnotation(ann.id);
-                                                        closePropertiesPanel();
-                                                    }}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-sm font-medium transition-all"
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                >
-                                                    {Icons.trash}
-                                                    Delete Annotation
-                                                </motion.button>
-                                            </>
-                                        );
-                                    })()
-                                )}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Context Menu */}
-            <AnimatePresence>
-                {contextMenu?.show && (
-                    <motion.div
-                        className="fixed z-[60] min-w-[180px] bg-[#1a1a24] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
-                        style={{
-                            left: contextMenu.x,
-                            top: contextMenu.y,
-                        }}
-                        initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                    >
-                        {/* Header */}
-                        <div className="px-3 py-2 border-b border-white/10 bg-white/5">
-                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                {contextMenu.type === 'clip' ? 'Clip Options' : 'Annotation Options'}
-                            </span>
-                        </div>
-
-                        {/* Menu Items */}
-                        <div className="py-1">
-                            {/* Edit */}
-                            <motion.button
-                                onClick={handleContextMenuEdit}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white hover:bg-cyan-500/20 transition-colors"
-                                whileHover={{ x: 2 }}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                </svg>
-                                Edit Properties
-                            </motion.button>
-
-                            {/* Jump to Start */}
-                            <motion.button
-                                onClick={handleContextMenuJumpToStart}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
-                                whileHover={{ x: 2 }}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-blue-400">
-                                    <polygon points="5 3 19 12 5 21 5 3" />
-                                </svg>
-                                Jump to Start
-                            </motion.button>
-
-                            {/* Duplicate (for annotations only) */}
-                            {contextMenu.type === 'annotation' && (
-                                <motion.button
-                                    onClick={() => {
-                                        const ann = annotations.find(a => a.id === contextMenu.id);
-                                        if (ann) {
-                                            const newAnn: Annotation = {
-                                                ...ann,
-                                                id: `ann_${Date.now()}`,
-                                                x: ann.x + 20,
-                                                y: ann.y + 20,
-                                            };
-                                            setAnnotations(prev => [...prev, newAnn]);
-                                        }
-                                        closeContextMenu();
-                                    }}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white hover:bg-white/10 transition-colors"
-                                    whileHover={{ x: 2 }}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
-                                    Duplicate
-                                </motion.button>
-                            )}
-
-                            {/* Divider */}
-                            <div className="my-1 border-t border-white/10" />
-
-                            {/* Delete */}
-                            <motion.button
-                                onClick={handleContextMenuDelete}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/20 transition-colors"
-                                whileHover={{ x: 2 }}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                </svg>
-                                Delete
-                            </motion.button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* Left Sidebar - Navigation */}
             <motion.div
                 className="w-14 bg-[#0f0f15] border-r border-white/5 flex flex-col items-center py-4"
@@ -2867,23 +2030,6 @@ export default function VideoAnalyzeStone() {
                                     transition={{ duration: 1, repeat: Infinity }}
                                 />
                                 <span className="text-red-400 text-sm font-medium">Recording Motion</span>
-                            </motion.div>
-                        )}
-
-                        {/* Pause Scene Mode Indicator */}
-                        {isPauseSceneMode && (
-                            <motion.div
-                                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 border border-red-500/50 rounded-lg"
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                            >
-                                <motion.div
-                                    className="w-3 h-3 bg-red-500 rounded-full"
-                                    animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-                                    transition={{ duration: 1, repeat: Infinity }}
-                                />
-                                <span className="text-red-400 text-sm font-medium">Pause Scene</span>
-                                <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-mono text-gray-400">Ctrl+Shift</kbd>
                             </motion.div>
                         )}
 
@@ -3290,7 +2436,7 @@ export default function VideoAnalyzeStone() {
 
                             {/* Active tool indicator */}
                             <AnimatePresence>
-                                {activeTool !== 'select' && !isDrawing && !showTextInput && !isPauseSceneMode && (
+                                {activeTool !== 'select' && !isDrawing && !showTextInput && (
                                     <motion.div
                                         className="absolute bottom-4 left-4 px-4 py-2 bg-white/10 border border-white/20 rounded-lg backdrop-blur-sm"
                                         initial={{ opacity: 0, y: 10 }}
@@ -3302,111 +2448,6 @@ export default function VideoAnalyzeStone() {
                                             <span className="font-medium capitalize">{activeTool} Tool</span>
                                             <span className="text-gray-400">• Click and drag to draw</span>
                                         </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            {/* Pause Scene Mode Overlay */}
-                            <AnimatePresence>
-                                {isPauseSceneMode && (
-                                    <motion.div
-                                        className="absolute inset-0 pointer-events-none"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                    >
-                                        {/* Border glow effect */}
-                                        <div className="absolute inset-0 border-4 border-red-500/50 rounded-lg animate-pulse" />
-
-                                        {/* Top banner */}
-                                        <motion.div
-                                            className="absolute top-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-red-500/90 backdrop-blur-sm rounded-xl shadow-lg shadow-red-500/30 pointer-events-auto"
-                                            initial={{ y: -20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <motion.div
-                                                    className="w-3 h-3 bg-white rounded-full"
-                                                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
-                                                    transition={{ duration: 1, repeat: Infinity }}
-                                                />
-                                                <span className="text-white font-semibold">PAUSE SCENE MODE</span>
-                                                <span className="text-white/70 text-sm">• Draw annotations for analysis</span>
-                                            </div>
-                                        </motion.div>
-
-                                        {/* Bottom controls */}
-                                        <motion.div
-                                            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-[#1a1a24]/95 backdrop-blur-sm border border-white/10 rounded-xl pointer-events-auto"
-                                            initial={{ y: 20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                        >
-                                            {/* Pause duration control */}
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-gray-400 text-sm">Pause Duration:</span>
-                                                <div className="flex items-center gap-1">
-                                                    {[1, 2, 3, 5, 10].map((dur) => (
-                                                        <motion.button
-                                                            key={dur}
-                                                            onClick={() => setPauseSceneDuration(dur)}
-                                                            className={`px-2 py-1 text-xs font-medium rounded transition-all ${pauseSceneDuration === dur
-                                                                ? 'bg-red-500 text-white'
-                                                                : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'
-                                                                }`}
-                                                            whileHover={{ scale: 1.05 }}
-                                                            whileTap={{ scale: 0.95 }}
-                                                        >
-                                                            {dur}s
-                                                        </motion.button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="w-px h-6 bg-white/10" />
-
-                                            {/* Tool shortcuts */}
-                                            <div className="flex items-center gap-2">
-                                                {['circle', 'arrow', 'line', 'text'].map((tool) => (
-                                                    <motion.button
-                                                        key={tool}
-                                                        onClick={() => setActiveTool(tool as Tool)}
-                                                        className={`p-2 rounded-lg transition-all ${activeTool === tool
-                                                            ? 'bg-red-500/30 text-red-400'
-                                                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
-                                                            }`}
-                                                        whileHover={{ scale: 1.1 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        title={tool.charAt(0).toUpperCase() + tool.slice(1)}
-                                                    >
-                                                        {getLayerIcon(tool)}
-                                                    </motion.button>
-                                                ))}
-                                            </div>
-
-                                            <div className="w-px h-6 bg-white/10" />
-
-                                            {/* Exit button */}
-                                            <motion.button
-                                                onClick={exitPauseSceneMode}
-                                                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm font-medium transition-all"
-                                                whileHover={{ scale: 1.02 }}
-                                                whileTap={{ scale: 0.98 }}
-                                            >
-                                                <span>Done</span>
-                                                <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px] font-mono">ESC</kbd>
-                                            </motion.button>
-                                        </motion.div>
-
-                                        {/* Timestamp indicator */}
-                                        <motion.div
-                                            className="absolute top-4 right-4 px-3 py-2 bg-black/70 backdrop-blur-sm rounded-lg"
-                                            initial={{ x: 20, opacity: 0 }}
-                                            animate={{ x: 0, opacity: 1 }}
-                                        >
-                                            <div className="text-sm font-mono text-red-400">
-                                                ⏸ {formatTime(pauseSceneStartTime || currentTime)}
-                                            </div>
-                                        </motion.div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -3793,12 +2834,6 @@ export default function VideoAnalyzeStone() {
                                                                 }}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    // Only select if it was a click, not a drag
-                                                                    if (wasDraggingRef.current) {
-                                                                        wasDraggingRef.current = false; // Reset for next interaction
-                                                                        return;
-                                                                    }
-                                                                    // Just select the item on click
                                                                     if (item.isClip) {
                                                                         setSelectedClip(item.id);
                                                                         seekTo(item.startTime);
@@ -3806,10 +2841,6 @@ export default function VideoAnalyzeStone() {
                                                                         setSelectedAnnotationId(item.id);
                                                                         seekTo(item.startTime);
                                                                     }
-                                                                }}
-                                                                onContextMenu={(e) => {
-                                                                    // Right-click to open context menu
-                                                                    openContextMenu(e, item.isClip ? 'clip' : 'annotation', item.id);
                                                                 }}
                                                             >
                                                                 {/* Left resize handle */}
@@ -3843,15 +2874,6 @@ export default function VideoAnalyzeStone() {
                                                                     {!item.isClip && annotations.find(a => a.id === item.id)?.keyframes && annotations.find(a => a.id === item.id)!.keyframes!.length > 0 && (
                                                                         <div className="ml-1 flex items-center gap-0.5">
                                                                             <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" title="Has recorded motion" />
-                                                                        </div>
-                                                                    )}
-                                                                    {/* Pause Scene indicator */}
-                                                                    {!item.isClip && annotations.find(a => a.id === item.id)?.isPauseScene && (
-                                                                        <div className="ml-1 flex items-center gap-0.5" title="Pause Scene - Video will pause here">
-                                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-red-400">
-                                                                                <rect x="6" y="4" width="4" height="16" rx="1" />
-                                                                                <rect x="14" y="4" width="4" height="16" rx="1" />
-                                                                            </svg>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -4085,36 +3107,6 @@ export default function VideoAnalyzeStone() {
                                     {Icons.record}
                                 </motion.span>
                                 Add Shot on Goal (M)
-                            </motion.button>
-                        </div>
-
-                        {/* Pause Scene Info */}
-                        <div className="p-4 border-t border-white/5">
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-red-400">
-                                    <rect x="6" y="4" width="4" height="16" rx="1" />
-                                    <rect x="14" y="4" width="4" height="16" rx="1" />
-                                </svg>
-                                Pause Scene
-                            </h3>
-                            <div className="text-xs text-gray-500 mb-3">
-                                Press <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-gray-300 font-mono">Ctrl+Shift</kbd> to pause video and draw annotations for analysis (e.g., offside positions).
-                            </div>
-                            <motion.button
-                                onClick={isPauseSceneMode ? exitPauseSceneMode : enterPauseSceneMode}
-                                disabled={!videoFile}
-                                className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isPauseSceneMode
-                                    ? 'bg-red-500/20 border border-red-500/50 text-red-400'
-                                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300'
-                                    }`}
-                                whileHover={{ scale: videoFile ? 1.02 : 1 }}
-                                whileTap={{ scale: videoFile ? 0.98 : 1 }}
-                            >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                    <rect x="6" y="4" width="4" height="16" rx="1" />
-                                    <rect x="14" y="4" width="4" height="16" rx="1" />
-                                </svg>
-                                {isPauseSceneMode ? 'Exit Pause Scene' : 'Enter Pause Scene'}
                             </motion.button>
                         </div>
 

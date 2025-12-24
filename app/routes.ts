@@ -24,4 +24,7 @@ export default [
   route("/games/player-statistics", "routes/games/player-statistics.tsx"),
   route("/games/competitions", "routes/games/competitions.tsx"),
   route("/games/opponents", "routes/games/opponents.tsx"),
+  // Development routes
+  route("/development/training-library", "routes/develpment/training-library.tsx"),
+  route("/development/videos", "routes/develpment/videos.tsx"),
 ] satisfies RouteConfig;
