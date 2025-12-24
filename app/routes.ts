@@ -14,4 +14,5 @@ export default [
   route("/management/organization", "routes/management/organization.tsx"),
   route("/management/contacts", "routes/management/contacts.tsx"),
   route("/management/attendance", "routes/management/attendance.tsx"),
+  route("/registrations", "routes/registrations.tsx"),
 ] satisfies RouteConfig;

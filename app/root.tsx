@@ -2,12 +2,13 @@ import {
   isRouteErrorResponse,
   Links,
   Meta,
-  Navigate,
   Outlet,
   Scripts,
   ScrollRestoration,
   useLocation,
+  useNavigate,
 } from "react-router";
+import { useEffect } from "react";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -54,9 +55,22 @@ export default function App() {
 
 function AuthGate() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { firebaseUser, loading } = useAuth();
   const isLoginRoute = location.pathname.startsWith("/login");
   const isBrowser = typeof window !== "undefined";
+
+  useEffect(() => {
+    if (!isBrowser || loading) {
+      return;
+    }
+
+    if (!firebaseUser && !isLoginRoute) {
+      navigate("/login", { replace: true, state: { from: location.pathname } });
+    } else if (firebaseUser && isLoginRoute) {
+      navigate("/", { replace: true });
+    }
+  }, [firebaseUser, loading, isLoginRoute, isBrowser, navigate, location.pathname]);
 
   if (!isBrowser) {
     return <Outlet />;
@@ -68,14 +82,6 @@ function AuthGate() {
         <p className="text-xs font-semibold uppercase tracking-[0.5em]">Loading…</p>
       </div>
     );
-  }
-
-  if (!firebaseUser && !isLoginRoute) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
-
-  if (firebaseUser && isLoginRoute) {
-    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

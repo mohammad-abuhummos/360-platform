@@ -7,7 +7,8 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "generate:api": "node ./scripts/generate-api.mjs"
+    "generate:api": "node ./scripts/generate-api.mjs",
+    "seed:users": "npx tsx scripts/seed-test-users.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

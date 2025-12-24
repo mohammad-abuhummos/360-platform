@@ -1,7 +1,9 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useLocation } from "react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import * as Headless from "@headlessui/react";
 import { useAuth } from "~/context/auth-context";
+import type { Club } from "~/lib/firestore-users";
 import { SidebarLayout } from "./sidebar-layout";
 import { Button } from "./button";
 import {
@@ -66,7 +68,7 @@ const navigationSections: NavigationSection[] = [
         ]
       },
       { label: "Payments", icon: WalletIcon },
-      { label: "Registrations", icon: ClipboardIcon },
+      { label: "Registrations", icon: ClipboardIcon, href: "/registrations" },
       { label: "Posts", icon: MegaphoneIcon },
       { label: "Scheduling", icon: ClockIcon },
       { label: "Development", icon: TrophyIcon },
@@ -87,13 +89,140 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   </SidebarLayout>;
 }
 
+function ClubSwitcher() {
+  const { clubs, activeClub, setActiveClub } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredClubs = useMemo(() => {
+    if (!searchQuery.trim()) return clubs;
+    const query = searchQuery.toLowerCase();
+    return clubs.filter(
+      (club) =>
+        club.name.toLowerCase().includes(query) ||
+        club.membershipRole.toLowerCase().includes(query)
+    );
+  }, [clubs, searchQuery]);
+
+  const handleClubSelect = async (club: Club) => {
+    if (club.id !== activeClub?.id) {
+      await setActiveClub(club.id);
+    }
+  };
+
+  const clubName = activeClub?.name ?? "Select a club";
+  const clubRoleLabel = activeClub?.membershipRole ?? "Administrator";
+
+  return (
+    <Headless.Popover className="relative">
+      {({ open }) => (
+        <>
+          <Headless.PopoverButton className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
+            <div className="rounded-2xl bg-white/10 p-2">
+              <ShieldIcon className="size-7 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-white/70">{clubRoleLabel}</p>
+              <p className="truncate text-lg font-semibold text-white">{clubName}</p>
+            </div>
+            <ChevronDownIcon
+              className={`size-5 text-white/70 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            />
+          </Headless.PopoverButton>
+
+          <Headless.PopoverPanel
+            transition
+            anchor="bottom start"
+            className="z-50 mt-2 w-72 origin-top-left rounded-xl bg-white p-2 shadow-xl ring-1 ring-zinc-950/10 transition duration-200 ease-out data-closed:scale-95 data-closed:opacity-0 dark:bg-zinc-900 dark:ring-white/10"
+          >
+            {({ close }) => (
+              <>
+                {/* Search Input */}
+                <div className="relative mb-2">
+                  <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+                  <input
+                    type="text"
+                    placeholder="Search groups..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border-0 bg-zinc-100 py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-500"
+                  />
+                </div>
+
+                {/* Section Header */}
+                <p className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-amber-600 dark:text-amber-500">
+                  My groups
+                </p>
+
+                {/* Clubs List */}
+                <div className="max-h-80 overflow-y-auto">
+                  {filteredClubs.length === 0 ? (
+                    <p className="px-2 py-4 text-center text-sm text-zinc-500">
+                      No groups found
+                    </p>
+                  ) : (
+                    filteredClubs.map((club) => {
+                      const isActive = club.id === activeClub?.id;
+                      return (
+                        <button
+                          key={club.id}
+                          type="button"
+                          onClick={() => {
+                            void handleClubSelect(club);
+                            close();
+                          }}
+                          className={`flex w-full items-center gap-3 rounded-lg p-2 text-left transition ${isActive
+                            ? "bg-amber-50 dark:bg-amber-500/10"
+                            : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            }`}
+                        >
+                          <div
+                            className={`flex size-10 items-center justify-center rounded-full ${isActive
+                              ? "bg-amber-500 text-white"
+                              : "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+                              }`}
+                          >
+                            <ShieldIcon className="size-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className={`truncate text-sm font-medium ${isActive
+                                ? "text-amber-700 dark:text-amber-400"
+                                : "text-zinc-900 dark:text-white"
+                                }`}
+                            >
+                              {club.name}
+                            </p>
+                            <p
+                              className={`text-xs ${isActive
+                                ? "text-amber-600 dark:text-amber-500"
+                                : "text-zinc-500 dark:text-zinc-400"
+                                }`}
+                            >
+                              {club.description || club.membershipRole}
+                            </p>
+                          </div>
+                          {isActive && (
+                            <CheckIcon className="size-5 text-amber-500" />
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
+          </Headless.PopoverPanel>
+        </>
+      )}
+    </Headless.Popover>
+  );
+}
+
 function DashboardSidebar() {
   const location = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
-  const { activeClub, profile, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
-  const clubName = activeClub?.name ?? "Jordan Knights Football Club";
-  const clubRoleLabel = activeClub?.membershipRole ?? "Administrator";
   const userDisplayName = profile?.displayName ?? "SMT Dev";
   const userEmail = profile?.email ?? "malek.kashouqa@smt.com.jo";
   const avatarInitials = getInitials(userDisplayName);
@@ -118,15 +247,7 @@ function DashboardSidebar() {
       <Sidebar className="h-full bg-transparent text-white">
         <SidebarHeader className="bg-white/5 text-white">
           <SidebarSection>
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-white/10 p-2">
-                <ShieldIcon className="size-7 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm text-white/70">{clubRoleLabel}</p>
-                <p className="truncate text-lg font-semibold text-white">{clubName}</p>
-              </div>
-            </div>
+            <ClubSwitcher />
           </SidebarSection>
         </SidebarHeader>
 
@@ -416,6 +537,31 @@ function ChevronIcon({ className, ...props }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props} className={iconClasses(className)}>
       <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props} className={iconClasses(className)}>
+      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SearchIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props} className={iconClasses(className)}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...props} className={iconClasses(className)}>
+      <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
