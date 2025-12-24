@@ -65,7 +65,7 @@ function randomElement<T>(arr: T[]): T {
 
 function generateGoals(homeScore: number, awayScore: number, players: typeof samplePlayers) {
     const goals = [];
-    
+
     for (let i = 0; i < homeScore; i++) {
         const scorer = randomElement(players);
         const assister = randomElement(players.filter(p => p.id !== scorer.id));
@@ -85,7 +85,7 @@ function generateGoals(homeScore: number, awayScore: number, players: typeof sam
         }
         goals.push(goal);
     }
-    
+
     for (let i = 0; i < awayScore; i++) {
         goals.push({
             id: `goal-away-${i}`,
@@ -96,14 +96,14 @@ function generateGoals(homeScore: number, awayScore: number, players: typeof sam
             forTeam: "away",
         });
     }
-    
+
     return goals.sort((a, b) => a.minute - b.minute);
 }
 
 function generateCards(players: typeof samplePlayers) {
     const cards = [];
     const numCards = randomInt(0, 4);
-    
+
     for (let i = 0; i < numCards; i++) {
         const player = randomElement(players);
         cards.push({
@@ -115,7 +115,7 @@ function generateCards(players: typeof samplePlayers) {
             reason: randomElement(["Foul", "Unsporting behavior", "Time wasting", "Handball"]),
         });
     }
-    
+
     return cards.sort((a, b) => a.minute - b.minute);
 }
 
@@ -124,7 +124,7 @@ function generatePlayerStats(players: typeof samplePlayers, goals: any[]) {
         const started = index < 11;
         const playerGoals = goals.filter(g => g.scorerId === player.id);
         const playerAssists = goals.filter(g => g.assistId === player.id);
-        
+
         const stat: any = {
             playerId: player.id,
             playerName: player.name,
@@ -135,7 +135,7 @@ function generatePlayerStats(players: typeof samplePlayers, goals: any[]) {
             yellowCards: Math.random() > 0.85 ? 1 : 0,
             redCards: Math.random() > 0.95 ? 1 : 0,
         };
-        
+
         // Only add substitution fields if they have values
         if (!started && Math.random() > 0.5) {
             stat.substitutedIn = randomInt(45, 80);
@@ -143,7 +143,7 @@ function generatePlayerStats(players: typeof samplePlayers, goals: any[]) {
         if (started && Math.random() > 0.7) {
             stat.substitutedOut = randomInt(60, 85);
         }
-        
+
         return stat;
     });
 }
@@ -151,7 +151,7 @@ function generatePlayerStats(players: typeof samplePlayers, goals: any[]) {
 async function seedGamesData(clubId: string) {
     try {
         console.log("🚀 Starting games seed for club:", clubId);
-        
+
         // 1. Create opponents
         console.log("\n📋 Creating opponents...");
         const opponentIds: string[] = [];
@@ -166,7 +166,7 @@ async function seedGamesData(clubId: string) {
             opponentIds.push(opponentRef.id);
             console.log(`  ✓ Created opponent: ${opponent.name}`);
         }
-        
+
         // 2. Create competitions
         console.log("\n🏆 Creating competitions...");
         const competitionIds: string[] = [];
@@ -175,7 +175,7 @@ async function seedGamesData(clubId: string) {
             startDate.setMonth(startDate.getMonth() - 6);
             const endDate = new Date();
             endDate.setMonth(endDate.getMonth() + 6);
-            
+
             const competitionRef = await addDoc(collection(db, `clubs/${clubId}/competitions`), {
                 clubId,
                 name: competition.name,
@@ -189,7 +189,7 @@ async function seedGamesData(clubId: string) {
             competitionIds.push(competitionRef.id);
             console.log(`  ✓ Created competition: ${competition.name}`);
         }
-        
+
         // 3. Create match results
         console.log("\n⚽ Creating match results...");
         const matchResults = [
@@ -206,14 +206,14 @@ async function seedGamesData(clubId: string) {
             { homeScore: 0, awayScore: 2, isHome: false, daysAgo: 77, status: "completed" as MatchStatus },
             { homeScore: 4, awayScore: 2, isHome: true, daysAgo: 84, status: "completed" as MatchStatus },
         ];
-        
+
         for (let i = 0; i < matchResults.length; i++) {
             const match = matchResults[i];
             const opponent = sampleOpponents[i % sampleOpponents.length];
             const competition = sampleCompetitions[i % sampleCompetitions.length];
             const matchDate = new Date();
             matchDate.setDate(matchDate.getDate() - match.daysAgo);
-            
+
             const goals = generateGoals(
                 match.isHome ? match.homeScore : match.awayScore,
                 match.isHome ? match.awayScore : match.homeScore,
@@ -221,7 +221,7 @@ async function seedGamesData(clubId: string) {
             );
             const cards = generateCards(samplePlayers);
             const playerStats = generatePlayerStats(samplePlayers, goals);
-            
+
             await addDoc(collection(db, `clubs/${clubId}/matchResults`), {
                 clubId,
                 eventId: `event-${i}`,
@@ -243,19 +243,19 @@ async function seedGamesData(clubId: string) {
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
-            
-            const result = match.isHome 
-                ? `${match.homeScore}-${match.awayScore}` 
+
+            const result = match.isHome
+                ? `${match.homeScore}-${match.awayScore}`
                 : `${match.awayScore}-${match.homeScore}`;
             const venue = match.isHome ? "(H)" : "(A)";
             console.log(`  ✓ Match ${i + 1}: vs ${opponent.name} ${result} ${venue}`);
         }
-        
+
         console.log("\n✅ Games seed completed successfully!");
         console.log(`   - ${sampleOpponents.length} opponents created`);
         console.log(`   - ${sampleCompetitions.length} competitions created`);
         console.log(`   - ${matchResults.length} match results created`);
-        
+
     } catch (error) {
         console.error("❌ Error seeding games data:", error);
         process.exit(1);

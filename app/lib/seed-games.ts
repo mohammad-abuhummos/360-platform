@@ -55,24 +55,28 @@ function randomElement<T>(arr: T[]): T {
 
 function generateGoals(homeScore: number, awayScore: number, players: typeof samplePlayers) {
     const goals = [];
-    
+
     // Home team goals
     for (let i = 0; i < homeScore; i++) {
         const scorer = randomElement(players);
         const assister = randomElement(players.filter(p => p.id !== scorer.id));
-        goals.push({
+        const hasAssist = Math.random() > 0.3;
+        const goal: any = {
             id: `goal-home-${i}`,
             scorerId: scorer.id,
             scorerName: scorer.name,
-            assistId: Math.random() > 0.3 ? assister.id : undefined,
-            assistName: Math.random() > 0.3 ? assister.name : undefined,
             minute: randomInt(1, 90),
             goalType: randomElement(goalTypes),
             isOwnGoal: false,
             forTeam: "home" as const,
-        });
+        };
+        if (hasAssist) {
+            goal.assistId = assister.id;
+            goal.assistName = assister.name;
+        }
+        goals.push(goal);
     }
-    
+
     // Away team goals
     for (let i = 0; i < awayScore; i++) {
         goals.push({
@@ -84,14 +88,14 @@ function generateGoals(homeScore: number, awayScore: number, players: typeof sam
             forTeam: "away" as const,
         });
     }
-    
+
     return goals.sort((a, b) => a.minute - b.minute);
 }
 
 function generateCards(players: typeof samplePlayers) {
     const cards = [];
     const numCards = randomInt(0, 4);
-    
+
     for (let i = 0; i < numCards; i++) {
         const player = randomElement(players);
         cards.push({
@@ -103,7 +107,7 @@ function generateCards(players: typeof samplePlayers) {
             reason: randomElement(["Foul", "Unsporting behavior", "Time wasting", "Handball"]),
         });
     }
-    
+
     return cards.sort((a, b) => a.minute - b.minute);
 }
 
@@ -112,8 +116,8 @@ function generatePlayerStats(players: typeof samplePlayers, homeScore: number, g
         const started = index < 11;
         const playerGoals = goals.filter(g => g.scorerId === player.id);
         const playerAssists = goals.filter(g => g.assistId === player.id);
-        
-        return {
+
+        const stat: any = {
             playerId: player.id,
             playerName: player.name,
             started,
@@ -122,16 +126,24 @@ function generatePlayerStats(players: typeof samplePlayers, homeScore: number, g
             assists: playerAssists.length,
             yellowCards: Math.random() > 0.85 ? 1 : 0,
             redCards: Math.random() > 0.95 ? 1 : 0,
-            substitutedIn: !started && Math.random() > 0.5 ? randomInt(45, 80) : undefined,
-            substitutedOut: started && Math.random() > 0.7 ? randomInt(60, 85) : undefined,
         };
+
+        // Only add substitution fields if they have values
+        if (!started && Math.random() > 0.5) {
+            stat.substitutedIn = randomInt(45, 80);
+        }
+        if (started && Math.random() > 0.7) {
+            stat.substitutedOut = randomInt(60, 85);
+        }
+
+        return stat;
     });
 }
 
 export async function seedGamesData(clubId: string): Promise<{ success: boolean; message: string }> {
     try {
         console.log("Starting games seed for club:", clubId);
-        
+
         // 1. Create opponents
         const opponentIds: string[] = [];
         for (const opponent of sampleOpponents) {
@@ -145,7 +157,7 @@ export async function seedGamesData(clubId: string): Promise<{ success: boolean;
             opponentIds.push(opponentRef.id);
             console.log("Created opponent:", opponent.name);
         }
-        
+
         // 2. Create competitions
         const competitionIds: string[] = [];
         for (const competition of sampleCompetitions) {
@@ -153,7 +165,7 @@ export async function seedGamesData(clubId: string): Promise<{ success: boolean;
             startDate.setMonth(startDate.getMonth() - 6);
             const endDate = new Date();
             endDate.setMonth(endDate.getMonth() + 6);
-            
+
             const competitionRef = await addDoc(collection(db, `clubs/${clubId}/competitions`), {
                 clubId,
                 name: competition.name,
@@ -167,7 +179,7 @@ export async function seedGamesData(clubId: string): Promise<{ success: boolean;
             competitionIds.push(competitionRef.id);
             console.log("Created competition:", competition.name);
         }
-        
+
         // 3. Create match results (past games)
         const matchResults = [
             // Wins
@@ -184,14 +196,14 @@ export async function seedGamesData(clubId: string): Promise<{ success: boolean;
             { homeScore: 0, awayScore: 2, isHome: false, daysAgo: 77, status: "completed" as MatchStatus }, // Loss
             { homeScore: 4, awayScore: 2, isHome: true, daysAgo: 84, status: "completed" as MatchStatus },
         ];
-        
+
         for (let i = 0; i < matchResults.length; i++) {
             const match = matchResults[i];
             const opponent = sampleOpponents[i % sampleOpponents.length];
             const competition = sampleCompetitions[i % sampleCompetitions.length];
             const matchDate = new Date();
             matchDate.setDate(matchDate.getDate() - match.daysAgo);
-            
+
             const goals = generateGoals(
                 match.isHome ? match.homeScore : match.awayScore,
                 match.isHome ? match.awayScore : match.homeScore,
@@ -199,7 +211,7 @@ export async function seedGamesData(clubId: string): Promise<{ success: boolean;
             );
             const cards = generateCards(samplePlayers);
             const playerStats = generatePlayerStats(samplePlayers, match.isHome ? match.homeScore : match.awayScore, goals);
-            
+
             await addDoc(collection(db, `clubs/${clubId}/matchResults`), {
                 clubId,
                 eventId: `event-${i}`,
@@ -223,10 +235,10 @@ export async function seedGamesData(clubId: string): Promise<{ success: boolean;
             });
             console.log(`Created match ${i + 1}:`, opponent.name, `${match.homeScore}-${match.awayScore}`);
         }
-        
+
         console.log("Games seed completed successfully!");
         return { success: true, message: `Created ${sampleOpponents.length} opponents, ${sampleCompetitions.length} competitions, and ${matchResults.length} match results` };
-        
+
     } catch (error) {
         console.error("Error seeding games data:", error);
         return { success: false, message: error instanceof Error ? error.message : "Unknown error" };
