@@ -2,13 +2,16 @@ import {
   isRouteErrorResponse,
   Links,
   Meta,
+  Navigate,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { AuthProvider, useAuth } from "./context/auth-context";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -42,6 +45,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
+  );
+}
+
+function AuthGate() {
+  const location = useLocation();
+  const { firebaseUser, loading } = useAuth();
+  const isLoginRoute = location.pathname.startsWith("/login");
+  const isBrowser = typeof window !== "undefined";
+
+  if (!isBrowser) {
+    return <Outlet />;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+        <p className="text-xs font-semibold uppercase tracking-[0.5em]">Loading…</p>
+      </div>
+    );
+  }
+
+  if (!firebaseUser && !isLoginRoute) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (firebaseUser && isLoginRoute) {
+    return <Navigate to="/" replace />;
+  }
+
   return <Outlet />;
 }
 

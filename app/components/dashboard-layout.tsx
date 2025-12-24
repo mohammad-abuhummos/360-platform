@@ -1,7 +1,9 @@
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useLocation } from "react-router";
 import { useState } from "react";
+import { useAuth } from "~/context/auth-context";
 import { SidebarLayout } from "./sidebar-layout";
+import { Button } from "./button";
 import {
   Sidebar,
   SidebarHeader,
@@ -88,6 +90,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 function DashboardSidebar() {
   const location = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+  const { activeClub, profile, signOut } = useAuth();
+
+  const clubName = activeClub?.name ?? "Jordan Knights Football Club";
+  const clubRoleLabel = activeClub?.membershipRole ?? "Administrator";
+  const userDisplayName = profile?.displayName ?? "SMT Dev";
+  const userEmail = profile?.email ?? "malek.kashouqa@smt.com.jo";
+  const avatarInitials = getInitials(userDisplayName);
 
   const isCurrent = (href?: string) => {
     if (!href) return false;
@@ -114,8 +123,8 @@ function DashboardSidebar() {
                 <ShieldIcon className="size-7 text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm text-white/70">Jordan Knights FC</p>
-                <p className="truncate text-lg font-semibold text-white">Administrator</p>
+                <p className="text-sm text-white/70">{clubRoleLabel}</p>
+                <p className="truncate text-lg font-semibold text-white">{clubName}</p>
               </div>
             </div>
           </SidebarSection>
@@ -182,11 +191,21 @@ function DashboardSidebar() {
         <SidebarFooter className="bg-white/5 text-white">
           <SidebarSection>
             <SidebarItem>
-              <Avatar initials="SD" alt="SMT Dev" />
-              <SidebarLabel className="text-white">SMT Dev</SidebarLabel>
+              <Avatar initials={avatarInitials} alt={userDisplayName} />
+              <SidebarLabel className="text-white">{userDisplayName}</SidebarLabel>
               <Badge color="green">Online</Badge>
             </SidebarItem>
-            <p className="px-2 text-xs text-white/60">malek.kashouqa@smt.com.jo</p>
+            <p className="px-2 text-xs text-white/60">{userEmail}</p>
+            <Button
+              type="button"
+              outline
+              className="mt-3 w-full justify-center text-sm text-white hover:bg-white/10"
+              onClick={() => {
+                void signOut();
+              }}
+            >
+              Log out
+            </Button>
           </SidebarSection>
         </SidebarFooter>
       </Sidebar>
@@ -195,12 +214,17 @@ function DashboardSidebar() {
 }
 
 function DashboardNavbar() {
+  const { activeClub, profile } = useAuth();
+  const clubName = activeClub?.name ?? "Jordan Knights Football Club";
+  const userDisplayName = profile?.displayName ?? "SMT Dev";
+  const avatarInitials = getInitials(userDisplayName);
+
   return (
     <Navbar>
       <NavbarSection className="max-lg:hidden">
         <NavbarItem>
           <HomeIcon data-slot="icon" />
-          <NavbarLabel>Jordan Knights Football Club</NavbarLabel>
+          <NavbarLabel>{clubName}</NavbarLabel>
         </NavbarItem>
       </NavbarSection>
       <NavbarSpacer />
@@ -210,12 +234,27 @@ function DashboardNavbar() {
         </NavbarItem>
         <NavbarDivider />
         <NavbarItem>
-          <Avatar initials="SD" alt="SMT Dev" />
-          <NavbarLabel>SMT Dev</NavbarLabel>
+          <Avatar initials={avatarInitials} alt={userDisplayName} />
+          <NavbarLabel>{userDisplayName}</NavbarLabel>
         </NavbarItem>
       </NavbarSection>
     </Navbar>
   );
+}
+
+function getInitials(name?: string) {
+  if (!name) {
+    return "AD";
+  }
+
+  const letters = name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+
+  const initials = letters.slice(0, 2);
+  return initials || "AD";
 }
 
 function iconClasses(className?: string) {

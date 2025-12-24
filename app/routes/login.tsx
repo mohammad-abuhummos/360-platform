@@ -8,6 +8,8 @@ import { Checkbox, CheckboxField, CheckboxGroup } from "../components/checkbox";
 import { Heading } from "../components/heading";
 import { Text, TextLink } from "../components/text";
 import { Link } from "../components/link";
+import { useNavigate } from "react-router";
+import { useAuth } from "~/context/auth-context";
 
 export function meta({ }: Route.MetaArgs) {
     return [
@@ -19,6 +21,9 @@ export function meta({ }: Route.MetaArgs) {
 export default function Login() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [theme, setTheme] = useState<"light" | "dark">("dark");
+    const [formError, setFormError] = useState<string | null>(null);
+    const { signIn, error: authError, loading: authLoading, firebaseUser } = useAuth();
+    const navigate = useNavigate();
     const isDark = theme === "dark";
 
     useEffect(() => {
@@ -55,20 +60,32 @@ export default function Login() {
         setTheme((current) => (current === "dark" ? "light" : "dark"));
     };
 
-    const connectToAuthApi = async () => {
-        // Reserved for the future authentication API connection.
-    };
-
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setFormError(null);
         setIsSubmitting(true);
 
+        const formData = new FormData(event.currentTarget);
+        const email = (formData.get("email") as string | null)?.trim() ?? "";
+        const password = (formData.get("password") as string | null) ?? "";
+
         try {
-            await connectToAuthApi();
+            await signIn(email, password);
+            navigate("/", { replace: true });
+        } catch (error) {
+            const message =
+                error instanceof Error ? error.message : "Unable to sign in. Please try again.";
+            setFormError(message);
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    useEffect(() => {
+        if (firebaseUser) {
+            navigate("/", { replace: true });
+        }
+    }, [firebaseUser, navigate]);
 
     const backgroundGradient = isDark
         ? "linear-gradient(155deg,hsl(0, 0%, 25%), hsl(0, 0%, 0%))"
@@ -185,14 +202,20 @@ export default function Login() {
                                 </Link>
                             </div>
 
+                            {(formError || authError) && (
+                                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                                    {formError || authError}
+                                </div>
+                            )}
+
                             <Button
                                 type="submit"
                                 color="blue"
                                 className="w-full justify-center"
-                                disabled={isSubmitting}
-                                data-disabled={isSubmitting ? "" : undefined}
+                                disabled={isSubmitting || authLoading}
+                                data-disabled={isSubmitting || authLoading ? "" : undefined}
                             >
-                                {isSubmitting ? "Connecting…" : "Sign in"}
+                                {isSubmitting || authLoading ? "Signing in…" : "Sign in"}
                             </Button>
 
                             <Text className="text-center text-sm text-zinc-500">

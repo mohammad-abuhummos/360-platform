@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc, query, orderBy, Timestamp, serverTimestamp } from 'firebase/firestore';
 
 // Firebase configuration
@@ -12,7 +12,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Types
@@ -160,5 +160,5 @@ export async function saveVideoAnalysisData(
     }
 }
 
-export { db };
+export { app, db };
 
