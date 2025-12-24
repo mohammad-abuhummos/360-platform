@@ -80,11 +80,11 @@ export default function CompetitionsPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-wrap items-center gap-4">
-                    <Button plain className="p-2 text-zinc-600 hover:bg-zinc-800 rounded-lg">
+                    <Button plain className="p-2 text-zinc-400 hover:bg-zinc-800 rounded-lg">
                         <ChevronLeftIcon className="size-5" />
                     </Button>
                     <div className="flex items-center gap-3">
-                        <TrophyIcon className="size-6 text-zinc-600" />
+                        <TrophyIcon className="size-6 text-zinc-400" />
                         <Heading level={1} className="text-2xl font-semibold">
                             Game Competitions
                         </Heading>
@@ -180,7 +180,7 @@ export default function CompetitionsPage() {
                                                                     <button
                                                                         onClick={() => setEditingCompetition(competition)}
                                                                         className={clsx(
-                                                                            "block w-full px-4 py-2 text-left text-sm",
+                                                                            "block w-full px-4 py-2 text-left text-sm text-zinc-100",
                                                                             focus ? "bg-zinc-800" : ""
                                                                         )}
                                                                     >

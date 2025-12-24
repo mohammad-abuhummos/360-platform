@@ -150,7 +150,7 @@ export default function GameHistoryPage() {
                         <ChevronLeftIcon className="size-5" />
                     </Button>
                     <div className="flex items-center gap-3">
-                        <StatsIcon className="size-6 text-zinc-600" />
+                        <StatsIcon className="size-6 text-zinc-400" />
                         <Heading level={1} className="text-2xl font-semibold">
                             Game
                         </Heading>

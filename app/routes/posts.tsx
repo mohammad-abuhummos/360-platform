@@ -355,7 +355,7 @@ export default function PostsPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-wrap items-center gap-4">
-                    <Button plain className="px-3 py-2 text-sm font-semibold text-zinc-600" onClick={() => window.history.back()}>
+                    <Button plain className="px-3 py-2 text-sm font-semibold text-zinc-400 hover:text-zinc-200" onClick={() => window.history.back()}>
                         <ChevronLeftIcon data-slot="icon" />
                         Back
                     </Button>
@@ -363,7 +363,7 @@ export default function PostsPage() {
                         <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg">
                             <MegaphoneIcon className="size-5 text-white" />
                         </div>
-                        <Heading level={1} className="text-2xl font-bold">
+                        <Heading level={1} className="text-2xl font-bold text-white">
                             Posts
                         </Heading>
                     </div>
@@ -384,7 +384,7 @@ export default function PostsPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex flex-wrap items-center gap-4 border-b border-zinc-200">
+                <div className="flex flex-wrap items-center gap-4 border-b border-zinc-700">
                     <Tab.Group selectedIndex={["published", "draft", "scheduled"].indexOf(activeTab)} onChange={(i) => setActiveTab(["published", "draft", "scheduled"][i] as TabType)}>
                         <Tab.List className="flex gap-6">
                             {[
@@ -398,8 +398,8 @@ export default function PostsPage() {
                                         clsx(
                                             "pb-3 text-sm font-medium outline-none transition-colors",
                                             selected
-                                                ? "border-b-2 border-amber-500 text-amber-600"
-                                                : "text-zinc-500 hover:text-zinc-700"
+                                                ? "border-b-2 border-amber-500 text-amber-400"
+                                                : "text-zinc-400 hover:text-zinc-200"
                                         )
                                     }
                                 >
@@ -413,7 +413,7 @@ export default function PostsPage() {
                 {/* Search */}
                 <div className="flex flex-wrap items-center gap-4">
                     <InputGroup className="w-full max-w-md">
-                        <SearchIcon data-slot="icon" className="size-5 text-zinc-400" />
+                        <SearchIcon data-slot="icon" className="size-5 text-zinc-500" />
                         <Input
                             type="search"
                             placeholder="Filter by title or content"
@@ -425,41 +425,41 @@ export default function PostsPage() {
 
                 {/* Error message */}
                 {error && (
-                    <div className="rounded-lg bg-red-50 p-4 text-red-700">
+                    <div className="rounded-lg bg-red-900/50 border border-red-700 p-4 text-red-300">
                         <p>{error}</p>
-                        <button className="mt-2 text-sm underline" onClick={() => setError(null)}>
+                        <button className="mt-2 text-sm underline hover:text-red-200" onClick={() => setError(null)}>
                             Dismiss
                         </button>
                     </div>
                 )}
 
                 {/* Posts Table */}
-                <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+                <div className="overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-lg">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="border-b border-zinc-200 bg-zinc-50">
+                            <thead className="border-b border-zinc-700 bg-zinc-800">
                                 <tr>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Title</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Published by</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Published as</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Status</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Created at</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Published at</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Sticky Until</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Players</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Parents</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Website</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Recipients</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Groups</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">View Count</th>
-                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-700">Comments</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Title</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Published by</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Published as</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Status</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Created at</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Published at</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Sticky Until</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Players</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Parents</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Website</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Recipients</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Groups</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">View Count</th>
+                                    <th className="whitespace-nowrap px-4 py-3 font-medium text-zinc-300">Comments</th>
                                     <th className="px-4 py-3"></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-zinc-100">
+                            <tbody className="divide-y divide-zinc-800">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={15} className="px-4 py-12 text-center text-zinc-500">
+                                        <td colSpan={15} className="px-4 py-12 text-center text-zinc-400">
                                             <div className="flex items-center justify-center gap-2">
                                                 <LoadingSpinner className="size-5" />
                                                 Loading posts...
@@ -468,18 +468,18 @@ export default function PostsPage() {
                                     </tr>
                                 ) : filteredPosts.length === 0 ? (
                                     <tr>
-                                        <td colSpan={15} className="px-4 py-12 text-center text-zinc-500">
-                                            <MegaphoneIcon className="mx-auto mb-3 size-12 text-zinc-300" />
-                                            <p className="font-medium">No posts found</p>
+                                        <td colSpan={15} className="px-4 py-12 text-center text-zinc-400">
+                                            <MegaphoneIcon className="mx-auto mb-3 size-12 text-zinc-600" />
+                                            <p className="font-medium text-zinc-300">No posts found</p>
                                             <p className="mt-1 text-sm">Create your first post to share with your club.</p>
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredPosts.map((post) => (
-                                        <tr key={post.id} className="hover:bg-zinc-50">
+                                        <tr key={post.id} className="hover:bg-zinc-800/50 transition-colors">
                                             <td className="px-4 py-3">
                                                 <button
-                                                    className="max-w-xs truncate text-left font-medium text-blue-600 hover:underline"
+                                                    className="max-w-xs truncate text-left font-medium text-amber-400 hover:text-amber-300 hover:underline"
                                                     onClick={() => {
                                                         setPreviewPost(post);
                                                         setShowPreviewDialog(true);
@@ -490,20 +490,20 @@ export default function PostsPage() {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <Avatar initials={getInitials(post.authorName)} className="size-7 bg-amber-100 text-amber-700 text-xs" />
-                                                    <span className="text-zinc-700">{post.authorName}</span>
+                                                    <Avatar initials={getInitials(post.authorName)} className="size-7 bg-amber-900/50 text-amber-400 text-xs" />
+                                                    <span className="text-zinc-300">{post.authorName}</span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 {post.postAsClub && post.targetGroupNames?.[0] ? (
                                                     <div className="flex items-center gap-2">
-                                                        <div className="flex size-6 items-center justify-center rounded-full bg-blue-100">
-                                                            <ShieldIcon className="size-3 text-blue-600" />
+                                                        <div className="flex size-6 items-center justify-center rounded-full bg-blue-900/50">
+                                                            <ShieldIcon className="size-3 text-blue-400" />
                                                         </div>
-                                                        <span className="text-zinc-600">{post.targetGroupNames[0]}</span>
+                                                        <span className="text-zinc-400">{post.targetGroupNames[0]}</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-zinc-400">-</span>
+                                                    <span className="text-zinc-600">-</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
@@ -513,31 +513,31 @@ export default function PostsPage() {
                                                     {post.status}
                                                 </Badge>
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
+                                            <td className="whitespace-nowrap px-4 py-3 text-zinc-400">
                                                 {formatDate(post.createdAt)}
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
+                                            <td className="whitespace-nowrap px-4 py-3 text-zinc-400">
                                                 {formatDate(post.publishedAt)}
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3 text-zinc-500">-</td>
                                             <td className="px-4 py-3">{getVisibilityIcon(post.visibilityRoles, "Players")}</td>
                                             <td className="px-4 py-3">{getVisibilityIcon(post.visibilityRoles, "Parents")}</td>
                                             <td className="px-4 py-3">{getVisibilityIcon(post.visibilityRoles, "Public")}</td>
-                                            <td className="px-4 py-3 text-zinc-600">{post.reactionsCount || "-"}</td>
-                                            <td className="px-4 py-3 text-zinc-600">{post.targetGroupNames?.length || "-"}</td>
-                                            <td className="px-4 py-3 text-zinc-600">{post.viewCount || "-"}</td>
+                                            <td className="px-4 py-3 text-zinc-400">{post.reactionsCount || "-"}</td>
+                                            <td className="px-4 py-3 text-zinc-400">{post.targetGroupNames?.length || "-"}</td>
+                                            <td className="px-4 py-3 text-zinc-400">{post.viewCount || "-"}</td>
                                             <td className="px-4 py-3">
                                                 {post.commentsEnabled ? (
-                                                    <span className="text-blue-600">{post.commentCount || 0}</span>
+                                                    <span className="text-amber-400">{post.commentCount || 0}</span>
                                                 ) : (
-                                                    <span className="text-zinc-400">Disabled</span>
+                                                    <span className="text-zinc-600">Disabled</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3">
                                                 {isAdmin && (
                                                     <Menu as="div" className="relative">
-                                                        <MenuButton className="rounded p-1 hover:bg-zinc-100">
-                                                            <EllipsisIcon className="size-5 text-zinc-500" />
+                                                        <MenuButton className="rounded p-1 hover:bg-zinc-700 transition-colors">
+                                                            <EllipsisIcon className="size-5 text-zinc-400" />
                                                         </MenuButton>
                                                         <Transition
                                                             as={Fragment}
@@ -548,13 +548,13 @@ export default function PostsPage() {
                                                             leaveFrom="transform opacity-100 scale-100"
                                                             leaveTo="transform opacity-0 scale-95"
                                                         >
-                                                            <MenuItems className="absolute right-0 z-10 mt-1 w-40 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                                            <MenuItems className="absolute right-0 z-10 mt-1 w-40 origin-top-right rounded-lg bg-zinc-800 py-1 shadow-lg ring-1 ring-zinc-700 focus:outline-none">
                                                                 <MenuItem>
                                                                     {({ active }) => (
                                                                         <button
                                                                             className={clsx(
-                                                                                "flex w-full items-center gap-2 px-4 py-2 text-sm",
-                                                                                active ? "bg-zinc-100" : ""
+                                                                                "flex w-full items-center gap-2 px-4 py-2 text-sm text-zinc-300",
+                                                                                active ? "bg-zinc-700" : ""
                                                                             )}
                                                                             onClick={() => openEditDialog(post)}
                                                                         >
@@ -568,8 +568,8 @@ export default function PostsPage() {
                                                                         {({ active }) => (
                                                                             <button
                                                                                 className={clsx(
-                                                                                    "flex w-full items-center gap-2 px-4 py-2 text-sm text-emerald-600",
-                                                                                    active ? "bg-zinc-100" : ""
+                                                                                    "flex w-full items-center gap-2 px-4 py-2 text-sm text-emerald-400",
+                                                                                    active ? "bg-zinc-700" : ""
                                                                                 )}
                                                                                 onClick={() => void handlePublish(post)}
                                                                             >
@@ -583,8 +583,8 @@ export default function PostsPage() {
                                                                     {({ active }) => (
                                                                         <button
                                                                             className={clsx(
-                                                                                "flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600",
-                                                                                active ? "bg-zinc-100" : ""
+                                                                                "flex w-full items-center gap-2 px-4 py-2 text-sm text-red-400",
+                                                                                active ? "bg-zinc-700" : ""
                                                                             )}
                                                                             onClick={() => void handleDelete(post)}
                                                                         >
@@ -605,7 +605,7 @@ export default function PostsPage() {
                         </table>
                     </div>
                     {filteredPosts.length > 0 && (
-                        <div className="border-t border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                        <div className="border-t border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-400">
                             Showing 1 to {filteredPosts.length} of {filteredPosts.length} results
                         </div>
                     )}
@@ -613,7 +613,7 @@ export default function PostsPage() {
 
                 {/* Create/Edit Post Dialog */}
                 <Dialog open={showCreateDialog} onClose={() => setShowCreateDialog(false)} size="2xl">
-                    <DialogTitle>{editingPost ? "Edit post" : "New post"}</DialogTitle>
+                    <DialogTitle className="text-white">{editingPost ? "Edit post" : "New post"}</DialogTitle>
 
                     {/* Scope tabs */}
                     <div className="mt-4 flex gap-2">
@@ -627,8 +627,8 @@ export default function PostsPage() {
                                 className={clsx(
                                     "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
                                     formData.scope === scope.key
-                                        ? "bg-zinc-900 text-white"
-                                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                                        ? "bg-amber-500 text-white"
+                                        : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
                                 )}
                                 onClick={() => updateForm({ scope: scope.key as PostScope })}
                             >
@@ -640,7 +640,7 @@ export default function PostsPage() {
                     <DialogBody className="space-y-6">
                         {/* Title */}
                         <div>
-                            <Label className="text-sm font-medium text-zinc-700">Title</Label>
+                            <label className="block text-sm font-medium text-zinc-300">Title</label>
                             <Input
                                 placeholder="Write your title here"
                                 value={formData.title}
@@ -652,7 +652,7 @@ export default function PostsPage() {
 
                         {/* Content */}
                         <div>
-                            <Label className="text-sm font-medium text-zinc-700">Content</Label>
+                            <label className="block text-sm font-medium text-zinc-300">Content</label>
                             <Textarea
                                 placeholder="Write a post, link a YouTube video"
                                 value={formData.content}
@@ -664,7 +664,7 @@ export default function PostsPage() {
 
                         {/* Attachments */}
                         <div>
-                            <Label className="text-sm font-medium text-zinc-700">Attachments</Label>
+                            <label className="block text-sm font-medium text-zinc-300">Attachments</label>
                             <p className="mb-2 text-xs text-zinc-500">Attachments are limited to 40 files.</p>
 
                             {formData.attachments.length > 0 && (
@@ -672,18 +672,18 @@ export default function PostsPage() {
                                     {formData.attachments.map((file, index) => (
                                         <div
                                             key={index}
-                                            className="flex items-center gap-2 rounded-lg bg-zinc-100 px-3 py-2"
+                                            className="flex items-center gap-2 rounded-lg bg-zinc-700 px-3 py-2"
                                         >
                                             {file.type.startsWith("image/") ? (
-                                                <ImageIcon className="size-4 text-zinc-500" />
+                                                <ImageIcon className="size-4 text-zinc-400" />
                                             ) : file.type.startsWith("video/") ? (
-                                                <VideoIcon className="size-4 text-zinc-500" />
+                                                <VideoIcon className="size-4 text-zinc-400" />
                                             ) : (
-                                                <FileIcon className="size-4 text-zinc-500" />
+                                                <FileIcon className="size-4 text-zinc-400" />
                                             )}
-                                            <span className="max-w-32 truncate text-sm">{file.name}</span>
+                                            <span className="max-w-32 truncate text-sm text-zinc-300">{file.name}</span>
                                             <button
-                                                className="text-zinc-400 hover:text-zinc-600"
+                                                className="text-zinc-500 hover:text-zinc-300 transition-colors"
                                                 onClick={() => removeAttachment(index)}
                                             >
                                                 <XIcon className="size-4" />
@@ -713,16 +713,16 @@ export default function PostsPage() {
 
                         {/* Advanced settings toggle */}
                         <details className="group">
-                            <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700">
+                            <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-300 hover:text-zinc-100 transition-colors">
                                 Advanced settings
                                 <ChevronRightIcon className="size-4 transition-transform group-open:rotate-90" />
                             </summary>
 
-                            <div className="mt-4 space-y-4 rounded-lg bg-zinc-50 p-4">
+                            <div className="mt-4 space-y-4 rounded-lg bg-zinc-800/50 p-4">
                                 {/* Group selection */}
                                 {formData.scope !== "ClubLobby" && (
                                     <div>
-                                        <Label className="text-sm font-medium text-zinc-700">Target Groups</Label>
+                                        <label className="block text-sm font-medium text-zinc-300">Target Groups</label>
                                         <Select
                                             value={formData.targetGroupIds[0] || ""}
                                             onChange={(e) => updateForm({ targetGroupIds: e.target.value ? [e.target.value] : [] })}
@@ -740,7 +740,7 @@ export default function PostsPage() {
 
                                 {/* Visibility roles */}
                                 <div>
-                                    <Label className="text-sm font-medium text-zinc-700">Visibility</Label>
+                                    <label className="block text-sm font-medium text-zinc-300">Visibility</label>
                                     <div className="mt-2 space-y-2">
                                         {[
                                             { key: "Players", label: "Players" },
@@ -806,7 +806,7 @@ export default function PostsPage() {
 
                                 {/* Publish mode */}
                                 <div>
-                                    <Label className="text-sm font-medium text-zinc-700">Publish mode</Label>
+                                    <label className="block text-sm font-medium text-zinc-300">Publish mode</label>
                                     <Select
                                         value={formData.publishMode}
                                         onChange={(e) => updateForm({ publishMode: e.target.value as PublishMode })}
@@ -821,7 +821,7 @@ export default function PostsPage() {
                                 {/* Schedule date */}
                                 {formData.publishMode === "Schedule" && (
                                     <div>
-                                        <Label className="text-sm font-medium text-zinc-700">Schedule date & time</Label>
+                                        <label className="block text-sm font-medium text-zinc-300">Schedule date & time</label>
                                         <Input
                                             type="datetime-local"
                                             value={formData.scheduledPublishAtUtc}
@@ -857,26 +857,26 @@ export default function PostsPage() {
 
                 {/* Preview Dialog */}
                 <Dialog open={showPreviewDialog} onClose={() => setShowPreviewDialog(false)} size="xl">
-                    <DialogTitle>{previewPost?.title || "Post Preview"}</DialogTitle>
+                    <DialogTitle className="text-white">{previewPost?.title || "Post Preview"}</DialogTitle>
                     <DialogBody>
                         {previewPost && (
                             <div className="space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <Avatar initials={getInitials(previewPost.authorName)} className="size-10 bg-amber-100 text-amber-700" />
+                                    <Avatar initials={getInitials(previewPost.authorName)} className="size-10 bg-amber-900/50 text-amber-400" />
                                     <div>
-                                        <p className="font-medium text-zinc-900">{previewPost.authorName}</p>
-                                        <p className="text-sm text-zinc-500">{formatDate(previewPost.publishedAt || previewPost.createdAt)}</p>
+                                        <p className="font-medium text-zinc-100">{previewPost.authorName}</p>
+                                        <p className="text-sm text-zinc-400">{formatDate(previewPost.publishedAt || previewPost.createdAt)}</p>
                                     </div>
                                 </div>
 
-                                <div className="prose prose-sm max-w-none">
-                                    <p className="whitespace-pre-wrap text-zinc-700">{previewPost.content}</p>
+                                <div className="prose prose-sm prose-invert max-w-none">
+                                    <p className="whitespace-pre-wrap text-zinc-300">{previewPost.content}</p>
                                 </div>
 
                                 {previewPost.attachments?.length > 0 && (
                                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                         {previewPost.attachments.map((attachment) => (
-                                            <div key={attachment.id} className="overflow-hidden rounded-lg">
+                                            <div key={attachment.id} className="overflow-hidden rounded-lg border border-zinc-700">
                                                 {attachment.contentType.startsWith("image/") ? (
                                                     <img
                                                         src={attachment.url}
@@ -890,9 +890,9 @@ export default function PostsPage() {
                                                         controls
                                                     />
                                                 ) : (
-                                                    <div className="flex aspect-video items-center justify-center bg-zinc-100">
-                                                        <FileIcon className="size-8 text-zinc-400" />
-                                                        <span className="ml-2 text-sm text-zinc-600">{attachment.fileName}</span>
+                                                    <div className="flex aspect-video items-center justify-center bg-zinc-800">
+                                                        <FileIcon className="size-8 text-zinc-500" />
+                                                        <span className="ml-2 text-sm text-zinc-400">{attachment.fileName}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -900,7 +900,7 @@ export default function PostsPage() {
                                     </div>
                                 )}
 
-                                <div className="flex items-center gap-4 border-t border-zinc-200 pt-4 text-sm text-zinc-500">
+                                <div className="flex items-center gap-4 border-t border-zinc-700 pt-4 text-sm text-zinc-400">
                                     <span>{previewPost.viewCount} views</span>
                                     <span>{previewPost.commentCount} comments</span>
                                     <span>{previewPost.reactionsCount} reactions</span>

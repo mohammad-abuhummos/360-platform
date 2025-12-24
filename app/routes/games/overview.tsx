@@ -19,6 +19,7 @@ import {
     type CalendarEvent,
     isGameEvent,
 } from "~/lib/firestore-events";
+import { seedGamesData } from "~/lib/seed-games";
 
 type IconProps = SVGProps<SVGSVGElement>;
 type TabType = "Overview" | "Game history" | "Player statistics";
@@ -37,11 +38,32 @@ export default function GamesOverviewPage() {
     const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
     const [gameEvents, setGameEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(true);
+    const [seeding, setSeeding] = useState(false);
     const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>(() => {
         const start = new Date();
         start.setMonth(start.getMonth() - 6);
         return { start, end: new Date() };
     });
+
+    // Seed data handler
+    const handleSeedData = async () => {
+        if (!clubId || seeding) return;
+        
+        setSeeding(true);
+        try {
+            const result = await seedGamesData(clubId);
+            if (result.success) {
+                alert(`Seed successful! ${result.message}`);
+            } else {
+                alert(`Seed failed: ${result.message}`);
+            }
+        } catch (error) {
+            console.error("Error seeding data:", error);
+            alert("Error seeding data. Check console for details.");
+        } finally {
+            setSeeding(false);
+        }
+    };
 
     // Subscribe to match results
     useEffect(() => {
@@ -231,10 +253,18 @@ export default function GamesOverviewPage() {
                                     <div className="flex flex-col items-center justify-center py-8 text-zinc-400">
                                         <NoDataIcon className="size-12 mb-2" />
                                         <span className="text-sm">No data available</span>
+                                        <Button 
+                                            color="blue" 
+                                            className="mt-4"
+                                            onClick={handleSeedData}
+                                            disabled={seeding}
+                                        >
+                                            {seeding ? "Creating sample data..." : "Generate Sample Data"}
+                                        </Button>
                                     </div>
                                 )}
 
-                                <div className="pt-4 border-t">
+                                <div className="pt-4 border-t border-zinc-700">
                                     <span className="text-sm text-zinc-500">
                                         Win rate {teamStats.winRate.toFixed(1)}%
                                     </span>

@@ -112,11 +112,11 @@ export default function OpponentsPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex flex-wrap items-center gap-4">
-                    <Button plain className="p-2 text-zinc-600 hover:bg-zinc-800 rounded-lg">
+                    <Button plain className="p-2 text-zinc-400 hover:bg-zinc-800 rounded-lg">
                         <ChevronLeftIcon className="size-5" />
                     </Button>
                     <div className="flex items-center gap-3">
-                        <UsersIcon className="size-6 text-zinc-600" />
+                        <UsersIcon className="size-6 text-zinc-400" />
                         <Heading level={1} className="text-2xl font-semibold">
                             Opponents
                         </Heading>
@@ -143,7 +143,7 @@ export default function OpponentsPage() {
                 {/* Bulk actions */}
                 {selectedIds.size > 0 && (
                     <div className="flex items-center gap-4 p-3 bg-zinc-50 rounded-lg">
-                        <span className="text-sm text-zinc-600">
+                        <span className="text-sm text-zinc-400">
                             {selectedIds.size} selected
                         </span>
                         <Button outline color="red" onClick={handleDeleteSelected}>
@@ -229,7 +229,7 @@ export default function OpponentsPage() {
                                                                     <button
                                                                         onClick={() => setEditingOpponent(opponent)}
                                                                         className={clsx(
-                                                                            "block w-full px-4 py-2 text-left text-sm",
+                                                                            "block w-full px-4 py-2 text-left text-sm text-zinc-100",
                                                                             focus ? "bg-zinc-800" : ""
                                                                         )}
                                                                     >
