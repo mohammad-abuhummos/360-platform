@@ -1,5 +1,7 @@
 import type { Route } from "./+types/index";
 import type { SVGProps } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router";
 import { DashboardLayout } from "../components/dashboard-layout";
 import { Heading, Subheading } from "../components/heading";
 import { Text, TextLink } from "../components/text";
@@ -9,19 +11,34 @@ import { Badge } from "../components/badge";
 import { Select } from "../components/select";
 import { DescriptionList, DescriptionTerm, DescriptionDetails } from "../components/description-list";
 import { Divider } from "../components/divider";
+import { useAuth } from "~/context/auth-context";
+import { PostsApi } from "~/api/generated/posts";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
-type WallPost = {
-  id: number;
-  author: string;
-  initials: string;
-  time: string;
-  title: string;
+interface PostAttachment {
+  id: string;
+  fileName: string;
+  contentType: string;
+  url: string;
+  sizeBytes: number;
+}
+
+interface Post {
+  id: string;
+  title: string | null;
   content: string;
-  links?: { label: string; href: string }[];
-  seen: string;
-};
+  authorId: string;
+  authorName: string;
+  postAsClub: boolean;
+  targetGroupNames: string[];
+  attachments: PostAttachment[];
+  publishedAt: string | null;
+  createdAt: string;
+  viewCount: number;
+  commentCount: number;
+  reactionsCount: number;
+}
 
 type Game = {
   id: number;
@@ -32,34 +49,6 @@ type Game = {
   score: string;
   status: "Win" | "Loss";
 };
-
-const wallPosts: WallPost[] = [
-  {
-    id: 1,
-    author: "Jordan Knights Football Club",
-    initials: "JK",
-    time: "Saturday · 9:33 AM",
-    title: "Announcement · End of 2025 term",
-    content:
-      "Dear Parents, we hope this message finds you well. Please review the key dates for the upcoming winter term and confirm attendance for winter training.",
-    links: [
-      { label: "Read more", href: "#" },
-      { label: "(https://we.tl/t-irINx4NqAf)", href: "#" },
-      { label: "(https://we.tl/t-vpUox3HqS8)", href: "#" },
-    ],
-    seen: "Seen by 52",
-  },
-  {
-    id: 2,
-    author: "Bashar Abdulalleh",
-    initials: "BA",
-    time: "Sunday · Nov 9 · 8:27 AM",
-    title: "صور مباريات كأس الأردن يوم الجمعة",
-    content: "لحظات مميزة بالحماس والمتعة. شاركوا الروابط لمتابعة اللقطات كاملة.",
-    links: [{ label: "(https://we.tl/t-QLD1P5Phd0)", href: "#" }],
-    seen: "Seen by 10",
-  },
-];
 
 const recentGames: Game[] = [
   {
@@ -92,6 +81,40 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
+  const { activeClub, profile } = useAuth();
+  const clubName = activeClub?.name ?? "Jordan Knights Football Club";
+  const membershipRole = activeClub?.membershipRole ?? "Administrator";
+
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+
+  // Fetch posts
+  const fetchPosts = useCallback(async () => {
+    if (!activeClub?.id) return;
+
+    setLoadingPosts(true);
+    try {
+      const response = await PostsApi.getApiClubsClubIdPosts({
+        pathParams: { clubId: activeClub.id },
+        query: { PageSize: 5 },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(data.items || data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch posts:", err);
+    } finally {
+      setLoadingPosts(false);
+    }
+  }, [activeClub?.id]);
+
+  useEffect(() => {
+    void fetchPosts();
+  }, [fetchPosts]);
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -104,11 +127,11 @@ export default function Home() {
             <Heading level={1} className="text-3xl font-semibold">
               Home
             </Heading>
-            <Text className="text-sm text-zinc-500">Jordan Knights Football Club · Administrator</Text>
+            <Text className="text-sm text-zinc-500">{clubName} · {membershipRole}</Text>
           </div>
           <div className="ml-auto flex flex-wrap gap-3">
             <Button outline>Invite staff</Button>
-            <Button color="blue">
+            <Button color="blue" onClick={() => navigate("/posts")}>
               <PlusIcon data-slot="icon" />
               New post
             </Button>
@@ -122,7 +145,7 @@ export default function Home() {
             <LastGamesCard />
           </div>
           <div className="space-y-6">
-            <WallCard />
+            <WallCard posts={posts} loading={loadingPosts} clubName={clubName} />
             <SupportCard />
           </div>
         </div>
@@ -230,50 +253,163 @@ function LastGamesCard() {
   );
 }
 
-function WallCard() {
+function WallCard({ posts, loading, clubName }: { posts: Post[]; loading: boolean; clubName: string }) {
+  const navigate = useNavigate();
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+    const timeStr = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+    if (diffDays === 0) {
+      return `Today · ${timeStr}`;
+    } else if (diffDays === 1) {
+      return `Yesterday · ${timeStr}`;
+    } else if (diffDays < 7) {
+      return `${date.toLocaleDateString("en-US", { weekday: "long" })} · ${timeStr}`;
+    } else {
+      return `${date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} · ${timeStr}`;
+    }
+  };
+
   return (
     <section className={`${cardBaseClass} h-fit`}>
       <div className="flex flex-wrap items-center gap-4">
         <Subheading level={2} className="dark:text-zinc-900">Wall</Subheading>
-        <Badge color="zinc" className="dark:text-zinc-900">Jordan Knights Football Club</Badge>
-        <Button color="blue" className="ml-auto">
+        <Badge color="zinc" className="dark:text-zinc-900">{clubName}</Badge>
+        <Button color="blue" className="ml-auto" onClick={() => navigate("/posts")}>
           <PlusIcon data-slot="icon" />
           New post
         </Button>
       </div>
       <Divider className="my-6" />
-      <div className="space-y-8">
-        {wallPosts.map((post) => (
-          <article key={post.id} className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <Avatar initials={post.initials} alt={post.author} className="size-10 bg-blue-200" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-zinc-900">{post.author}</p>
-                <p className="text-xs text-zinc-500">{post.time}</p>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner className="size-6 text-zinc-400" />
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="py-12 text-center">
+          <MegaphoneIcon className="mx-auto mb-3 size-12 text-zinc-300" />
+          <p className="font-medium text-zinc-600">No posts yet</p>
+          <p className="mt-1 text-sm text-zinc-500">Create your first post to share with your club.</p>
+          <Button color="blue" className="mt-4" onClick={() => navigate("/posts")}>
+            <PlusIcon data-slot="icon" />
+            Create post
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {posts.map((post) => (
+            <article key={post.id} className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <Avatar
+                  initials={getInitials(post.postAsClub && post.targetGroupNames?.[0] ? post.targetGroupNames[0] : post.authorName)}
+                  alt={post.authorName}
+                  className="size-10 bg-amber-100 text-amber-700"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-zinc-900">
+                    {post.postAsClub && post.targetGroupNames?.[0] ? post.targetGroupNames[0] : post.authorName}
+                  </p>
+                  <p className="text-xs text-zinc-500">{formatTime(post.publishedAt || post.createdAt)}</p>
+                </div>
+                <span className="ml-auto text-xs text-zinc-500">Seen by {post.viewCount || 0}</span>
               </div>
-              <span className="ml-auto text-xs text-zinc-500">{post.seen}</span>
+
+              {post.title && (
+                <Heading level={3} className="text-base font-semibold text-zinc-900 dark:text-zinc-900">
+                  {post.title}
+                </Heading>
+              )}
+
+              <Text className="text-sm text-zinc-600 whitespace-pre-wrap">{post.content}</Text>
+
+              {/* Attachments - Images */}
+              {post.attachments?.filter((a) => a.contentType?.startsWith("image/")).length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  {post.attachments
+                    .filter((a) => a.contentType?.startsWith("image/"))
+                    .slice(0, 4)
+                    .map((attachment, idx) => (
+                      <div key={attachment.id || idx} className="relative overflow-hidden rounded-lg">
+                        <img
+                          src={attachment.url}
+                          alt={attachment.fileName}
+                          className="aspect-video w-full object-cover transition-transform hover:scale-105"
+                        />
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* Attachments - Videos */}
+              {post.attachments?.filter((a) => a.contentType?.startsWith("video/")).length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {post.attachments
+                    .filter((a) => a.contentType?.startsWith("video/"))
+                    .slice(0, 2)
+                    .map((attachment, idx) => (
+                      <div key={attachment.id || idx} className="overflow-hidden rounded-lg">
+                        <video
+                          src={attachment.url}
+                          className="aspect-video w-full object-cover"
+                          controls
+                          poster=""
+                        />
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {/* YouTube detection from content */}
+              {(post.content.includes("youtube.com") || post.content.includes("youtu.be")) && (
+                <div className="mt-3 overflow-hidden rounded-lg bg-zinc-100 p-3">
+                  <div className="flex items-center gap-2 text-sm text-zinc-600">
+                    <VideoIcon className="size-4" />
+                    <span>YouTube video linked</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-zinc-500">
+                <button className="flex items-center gap-1 text-zinc-700 hover:text-amber-600 transition-colors">
+                  <HeartIcon className="size-4" />
+                  Like {post.reactionsCount > 0 && `(${post.reactionsCount})`}
+                </button>
+                <button className="flex items-center gap-1 text-zinc-700 hover:text-blue-600 transition-colors">
+                  <CommentIcon className="size-4" />
+                  Comment {post.commentCount > 0 && `(${post.commentCount})`}
+                </button>
+                <button className="flex items-center gap-1 text-zinc-700 hover:text-green-600 transition-colors">
+                  <ShareIcon className="size-4" />
+                  Share
+                </button>
+              </div>
+            </article>
+          ))}
+
+          {posts.length > 0 && (
+            <div className="pt-4 text-center border-t border-zinc-100">
+              <Button plain className="text-sm text-blue-600" onClick={() => navigate("/posts")}>
+                View all posts
+              </Button>
             </div>
-            <Heading level={3} className="text-base font-semibold text-zinc-900 dark:text-zinc-900">
-              {post.title}
-            </Heading>
-            <Text className="text-sm text-zinc-600">{post.content}</Text>
-            {post.links && (
-              <ul className="space-y-1">
-                {post.links.map((link) => (
-                  <li key={link.label}>
-                    <TextLink color="blue" href={link.href} className="text-zinc-950 dark:text-zinc-900">{link.label}</TextLink>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-zinc-500">
-              <button className="text-zinc-700">Like</button>
-              <button className="text-zinc-700">Comment</button>
-              <button className="text-zinc-700">Share</button>
-            </div>
-          </article>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -472,6 +608,55 @@ function CalendarLargeIcon({ className, ...props }: IconProps) {
     <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.6" {...props} className={iconClasses(className)}>
       <rect x="6" y="10" width="36" height="30" rx="4" />
       <path d="M32 6v8M16 6v8M6 20h36M16 26h4M24 26h4M32 26h4M16 32h4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function VideoIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props} className={iconClasses(className)}>
+      <rect x="2" y="4" width="14" height="16" rx="2" />
+      <path d="M16 10l6-4v12l-6-4v-4z" />
+    </svg>
+  );
+}
+
+function HeartIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props} className={iconClasses(className)}>
+      <path d="M12 21C12 21 3 14.5 3 8.5C3 5.5 5.5 3 8.5 3C10.2 3 11.8 3.9 12 5C12.2 3.9 13.8 3 15.5 3C18.5 3 21 5.5 21 8.5C21 14.5 12 21 12 21Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CommentIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props} className={iconClasses(className)}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ShareIcon({ className, ...props }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props} className={iconClasses(className)}>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" />
+    </svg>
+  );
+}
+
+function LoadingSpinner({ className }: { className?: string }) {
+  return (
+    <svg className={`animate-spin ${className || ""}`} viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
     </svg>
   );
 }

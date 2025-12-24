@@ -67,12 +67,22 @@ const navigationSections: NavigationSection[] = [
           { label: "Attendance", href: "/management/attendance" },
         ]
       },
-      { label: "Payments", icon: WalletIcon },
+      // { label: "Payments", icon: WalletIcon },
       { label: "Registrations", icon: ClipboardIcon, href: "/registrations" },
-      { label: "Posts", icon: MegaphoneIcon },
+      { label: "Posts", icon: MegaphoneIcon, href: "/posts" },
       { label: "Scheduling", icon: ClockIcon },
       { label: "Development", icon: TrophyIcon },
-      { label: "Games", icon: FlagIcon },
+      {
+        label: "Games",
+        icon: FlagIcon,
+        subItems: [
+          { label: "Overview", href: "/games/overview" },
+          { label: "Game History", href: "/games/game-history" },
+          { label: "Player Statistics", href: "/games/player-statistics" },
+          { label: "Competitions", href: "/games/competitions" },
+          { label: "Opponents", href: "/games/opponents" },
+        ]
+      },
       { label: "Settings", icon: SettingsIcon },
       { label: "Support", icon: LifebuoyIcon },
     ],

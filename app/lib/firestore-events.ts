@@ -9,11 +9,11 @@ import {
     orderBy,
     query,
     serverTimestamp,
+    Timestamp,
     updateDoc,
     where,
     type DocumentData,
     type QueryDocumentSnapshot,
-    type Timestamp,
     type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "~/lib/firebase";
@@ -97,35 +97,35 @@ export type CalendarEvent = {
     rsvpBefore?: Timestamp;
     repeat: "none" | "daily" | "weekly" | "biweekly" | "monthly";
     repeatUntil?: Timestamp;
-    
+
     // Auto-add settings
     autoAddAdmins: boolean;
     autoAddPlayers: boolean;
-    
+
     // Visibility settings
     hideParticipants: boolean;
     visibility: "everyone" | "organizers_only" | "participants_only";
     showOnWebsite: boolean;
-    
+
     // Physical strain (0-100)
     physicalStrain: number;
-    
+
     // Attachments
     attachments: EventAttachment[];
-    
+
     // Game-specific details (only for type === "game" or "cup")
     gameDetails?: GameDetails;
-    
+
     // Resources (e.g., field, equipment)
     resources: EventResource[];
-    
+
     // Training session (for practice events)
     session?: EventSession;
-    
+
     // Participants
     organizers: EventParticipant[];
     participants: EventParticipant[];
-    
+
     // Stats
     attendanceStats: {
         accepted: number;
@@ -133,13 +133,13 @@ export type CalendarEvent = {
         pending: number;
         waiting: number;
     };
-    
+
     // Metadata
     createdBy: string;
     createdByName: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
-    
+
     // Comments
     commentsCount: number;
 };
@@ -243,11 +243,11 @@ export async function createEvent(
 export async function getEvent(clubId: string, eventId: string): Promise<CalendarEvent | null> {
     const docRef = doc(db, getEventsCollectionPath(clubId), eventId);
     const docSnap = await getDoc(docRef);
-    
+
     if (!docSnap.exists()) {
         return null;
     }
-    
+
     return mapDocToEvent(docSnap as QueryDocumentSnapshot<DocumentData>);
 }
 
@@ -292,7 +292,7 @@ export function subscribeToEvents(
         collection(db, getEventsCollectionPath(clubId)),
         orderBy("startTime", "asc")
     );
-    
+
     return onSnapshot(q, (snapshot) => {
         const events = snapshot.docs.map(mapDocToEvent);
         callback(events);
@@ -334,20 +334,21 @@ export async function updateAttendance(
 ): Promise<void> {
     const event = await getEvent(clubId, eventId);
     if (!event) throw new Error("Event not found");
-    
+
     const listKey = isOrganizer ? "organizers" : "participants";
     const list = event[listKey];
     const participantIndex = list.findIndex((p) => p.id === participantId);
-    
+
     if (participantIndex === -1) {
         throw new Error("Participant not found");
     }
-    
+
     list[participantIndex].attendanceStatus = status;
     if (status === "accepted") {
-        list[participantIndex].attendedAt = serverTimestamp() as Timestamp;
+        // Use Timestamp.now() instead of serverTimestamp() since it's inside an array
+        list[participantIndex].attendedAt = Timestamp.now();
     }
-    
+
     // Recalculate stats
     const allParticipants = [...event.organizers, ...event.participants];
     const stats = {
@@ -356,7 +357,7 @@ export async function updateAttendance(
         pending: allParticipants.filter((p) => p.attendanceStatus === "pending").length,
         waiting: allParticipants.filter((p) => p.attendanceStatus === "waiting").length,
     };
-    
+
     await updateEvent(clubId, eventId, {
         [listKey]: list,
         attendanceStats: stats,
@@ -373,10 +374,10 @@ export async function addParticipant(
 ): Promise<void> {
     const event = await getEvent(clubId, eventId);
     if (!event) throw new Error("Event not found");
-    
+
     const listKey = participant.role === "organizer" ? "organizers" : "participants";
     const list = [...event[listKey], participant];
-    
+
     // Recalculate stats
     const allParticipants = [...event.organizers, ...event.participants, participant];
     const stats = {
@@ -385,7 +386,7 @@ export async function addParticipant(
         pending: allParticipants.filter((p) => p.attendanceStatus === "pending").length,
         waiting: allParticipants.filter((p) => p.attendanceStatus === "waiting").length,
     };
-    
+
     await updateEvent(clubId, eventId, {
         [listKey]: list,
         attendanceStats: stats,
@@ -403,10 +404,10 @@ export async function removeParticipant(
 ): Promise<void> {
     const event = await getEvent(clubId, eventId);
     if (!event) throw new Error("Event not found");
-    
+
     const listKey = isOrganizer ? "organizers" : "participants";
     const list = event[listKey].filter((p) => p.id !== participantId);
-    
+
     // Recalculate stats
     const otherList = isOrganizer ? event.participants : event.organizers;
     const allParticipants = [...list, ...otherList];
@@ -416,7 +417,7 @@ export async function removeParticipant(
         pending: allParticipants.filter((p) => p.attendanceStatus === "pending").length,
         waiting: allParticipants.filter((p) => p.attendanceStatus === "waiting").length,
     };
-    
+
     await updateEvent(clubId, eventId, {
         [listKey]: list,
         attendanceStats: stats,
@@ -438,7 +439,7 @@ export async function addComment(
         ...comment,
         createdAt: serverTimestamp(),
     });
-    
+
     // Increment comments count
     const event = await getEvent(clubId, eventId);
     if (event) {
@@ -446,7 +447,7 @@ export async function addComment(
             commentsCount: (event.commentsCount || 0) + 1,
         });
     }
-    
+
     return docRef.id;
 }
 
@@ -459,7 +460,7 @@ export async function getComments(clubId: string, eventId: string): Promise<Even
         orderBy("createdAt", "asc")
     );
     const snapshot = await getDocs(q);
-    
+
     return snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -478,7 +479,7 @@ export function subscribeToComments(
         collection(db, getCommentsCollectionPath(clubId, eventId)),
         orderBy("createdAt", "asc")
     );
-    
+
     return onSnapshot(q, (snapshot) => {
         const comments = snapshot.docs.map((doc) => ({
             id: doc.id,
@@ -547,7 +548,7 @@ export function subscribeToNotes(
         collection(db, getNotesCollectionPath(clubId, eventId)),
         orderBy("createdAt", "desc")
     );
-    
+
     return onSnapshot(q, (snapshot) => {
         const notes = snapshot.docs.map((doc) => ({
             id: doc.id,

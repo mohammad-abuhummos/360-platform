@@ -16,5 +16,12 @@ export default [
   route("/management/contacts", "routes/management/contacts.tsx"),
   route("/management/attendance", "routes/management/attendance.tsx"),
   route("/registrations", "routes/registrations.tsx"),
+  route("/posts", "routes/posts.tsx"),
   route("/forms/:clubId/:registrationId", "routes/forms.$clubId.$registrationId.tsx"),
+  // Games routes
+  route("/games/overview", "routes/games/overview.tsx"),
+  route("/games/game-history", "routes/games/history.tsx"),
+  route("/games/player-statistics", "routes/games/player-statistics.tsx"),
+  route("/games/competitions", "routes/games/competitions.tsx"),
+  route("/games/opponents", "routes/games/opponents.tsx"),
 ] satisfies RouteConfig;
