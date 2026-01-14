@@ -27,4 +27,10 @@ export default [
   // Development routes
   route("/development/training-library", "routes/develpment/training-library.tsx"),
   route("/development/videos", "routes/develpment/videos.tsx"),
+  // Payments routes
+  route("/payments/overview", "routes/payments/overview.tsx"),
+  route("/payments/invoices", "routes/payments/invoices.tsx"),
+  route("/payments/subscriptions", "routes/payments/subscriptions.tsx"),
+  route("/payments/products", "routes/payments/products.tsx"),
+  route("/payments/reports", "routes/payments/reports.tsx"),
 ] satisfies RouteConfig;

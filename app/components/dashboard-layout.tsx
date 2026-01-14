@@ -67,7 +67,17 @@ const navigationSections: NavigationSection[] = [
           { label: "Attendance", href: "/management/attendance" },
         ]
       },
-      // { label: "Payments", icon: WalletIcon },
+      {
+        label: "Payments",
+        icon: WalletIcon,
+        subItems: [
+          { label: "Overview", href: "/payments/overview" },
+          { label: "Invoices", href: "/payments/invoices" },
+          { label: "Subscriptions", href: "/payments/subscriptions" },
+          { label: "Products", href: "/payments/products" },
+          { label: "Reports", href: "/payments/reports" },
+        ]
+      },
       { label: "Registrations", icon: ClipboardIcon, href: "/registrations" },
       { label: "Posts", icon: MegaphoneIcon, href: "/posts" },
       { label: "Scheduling", icon: ClockIcon },
