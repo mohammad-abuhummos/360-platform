@@ -1503,9 +1503,30 @@ export default function TrainingLibraryPage() {
                                 </button>
                                 <button
                                     onClick={handleSavePlan}
-                                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                                    disabled={isExporting}
+                                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${isExporting
+                                        ? 'bg-blue-700 cursor-not-allowed opacity-80'
+                                        : 'bg-blue-600 hover:bg-blue-700'
+                                        }`}
                                 >
-                                    Save
+                                    {isExporting ? (
+                                        <>
+                                            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                            </svg>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                                                <polyline points="17,21 17,13 7,13 7,21" />
+                                                <polyline points="7,3 7,8 15,8" />
+                                            </svg>
+                                            Save
+                                        </>
+                                    )}
                                 </button>
                             </>
                         )}
@@ -1521,13 +1542,13 @@ export default function TrainingLibraryPage() {
                             <div className="mb-4">
                                 <span className="mb-2 block text-xs font-medium text-zinc-400">Shapes</span>
                                 <div className="grid grid-cols-3 gap-1">
-                                    <ToolButton icon="○" active={activeTool === 'circle'} onClick={() => setActiveTool('circle')} title="Circle" />
-                                    <ToolButton icon="□" active={activeTool === 'rectangle'} onClick={() => setActiveTool('rectangle')} title="Rectangle" />
-                                    <ToolButton icon="▢" active={activeTool === 'zone'} onClick={() => setActiveTool('zone')} title="Zone" />
-                                    <ToolButton icon="╱" active={activeTool === 'line'} onClick={() => setActiveTool('line')} title="Line" />
-                                    <ToolButton icon="→" active={activeTool === 'arrow'} onClick={() => setActiveTool('arrow')} title="Arrow" />
-                                    <ToolButton icon="┈" active={activeTool === 'dashed-line'} onClick={() => setActiveTool('dashed-line')} title="Dashed Line" />
-                                    <ToolButton icon="T" active={activeTool === 'text'} onClick={() => setActiveTool('text')} title="Text" />
+                                    <ToolButton icon={Icons.circle} active={activeTool === 'circle'} onClick={() => setActiveTool('circle')} title="Circle" />
+                                    <ToolButton icon={Icons.rectangle} active={activeTool === 'rectangle'} onClick={() => setActiveTool('rectangle')} title="Rectangle" />
+                                    <ToolButton icon={Icons.zone} active={activeTool === 'zone'} onClick={() => setActiveTool('zone')} title="Zone" />
+                                    <ToolButton icon={Icons.line} active={activeTool === 'line'} onClick={() => setActiveTool('line')} title="Line" />
+                                    <ToolButton icon={Icons.arrow} active={activeTool === 'arrow'} onClick={() => setActiveTool('arrow')} title="Arrow" />
+                                    <ToolButton icon={Icons.dashedLine} active={activeTool === 'dashed-line'} onClick={() => setActiveTool('dashed-line')} title="Dashed Line" />
+                                    <ToolButton icon={Icons.text} active={activeTool === 'text'} onClick={() => setActiveTool('text')} title="Text" />
                                 </div>
                             </div>
 
@@ -1535,14 +1556,14 @@ export default function TrainingLibraryPage() {
                             <div className="mb-4">
                                 <span className="mb-2 block text-xs font-medium text-zinc-400">Equipment</span>
                                 <div className="grid grid-cols-3 gap-1">
-                                    <ToolButton icon="⚽" active={activeTool === 'ball'} onClick={() => setActiveTool('ball')} title="Ball" />
-                                    <ToolButton icon="▲" active={activeTool === 'cone'} onClick={() => setActiveTool('cone')} title="Cone" />
-                                    <ToolButton icon="⊓" active={activeTool === 'goal'} onClick={() => setActiveTool('goal')} title="Goal" />
-                                    <ToolButton icon="☰" active={activeTool === 'ladder'} onClick={() => setActiveTool('ladder')} title="Ladder" />
-                                    <ToolButton icon="━" active={activeTool === 'hurdle'} onClick={() => setActiveTool('hurdle')} title="Hurdle" />
-                                    <ToolButton icon="│" active={activeTool === 'pole'} onClick={() => setActiveTool('pole')} title="Pole" />
-                                    <ToolButton icon="⚑" active={activeTool === 'flag'} onClick={() => setActiveTool('flag')} title="Flag" />
-                                    <ToolButton icon="♟" active={activeTool === 'mannequin'} onClick={() => setActiveTool('mannequin')} title="Mannequin" />
+                                    <ToolButton icon={Icons.ball} active={activeTool === 'ball'} onClick={() => setActiveTool('ball')} title="Ball" />
+                                    <ToolButton icon={Icons.cone} active={activeTool === 'cone'} onClick={() => setActiveTool('cone')} title="Cone" />
+                                    <ToolButton icon={Icons.goal} active={activeTool === 'goal'} onClick={() => setActiveTool('goal')} title="Goal" />
+                                    <ToolButton icon={Icons.ladder} active={activeTool === 'ladder'} onClick={() => setActiveTool('ladder')} title="Ladder" />
+                                    <ToolButton icon={Icons.hurdle} active={activeTool === 'hurdle'} onClick={() => setActiveTool('hurdle')} title="Hurdle" />
+                                    <ToolButton icon={Icons.pole} active={activeTool === 'pole'} onClick={() => setActiveTool('pole')} title="Pole" />
+                                    <ToolButton icon={Icons.flag} active={activeTool === 'flag'} onClick={() => setActiveTool('flag')} title="Flag" />
+                                    <ToolButton icon={Icons.mannequin} active={activeTool === 'mannequin'} onClick={() => setActiveTool('mannequin')} title="Mannequin" />
                                 </div>
                             </div>
 
@@ -1568,19 +1589,21 @@ export default function TrainingLibraryPage() {
                             {/* Select Tool */}
                             <button
                                 onClick={() => setActiveTool('select')}
-                                className={`mb-2 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeTool === 'select' ? 'bg-blue-600 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+                                className={`mb-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${activeTool === 'select' ? 'bg-blue-600 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                                     }`}
                             >
-                                ↖ Select
+                                {Icons.select}
+                                Select
                             </button>
 
                             {/* Delete */}
                             {selectedObjectId && (
                                 <button
                                     onClick={deleteSelectedObject}
-                                    className="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
                                 >
-                                    🗑 Delete
+                                    {Icons.delete}
+                                    Delete
                                 </button>
                             )}
 
@@ -1654,13 +1677,23 @@ export default function TrainingLibraryPage() {
                                             className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isAnimating ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-zinc-700 text-white hover:bg-zinc-600'
                                                 }`}
                                         >
-                                            ◀
+                                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                                            </svg>
                                         </button>
                                         <button
                                             onClick={() => setIsPlaying(!isPlaying)}
                                             className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                                         >
-                                            {isPlaying ? '⏸' : '▶'}
+                                            {isPlaying ? (
+                                                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M8 5v14l11-7z" />
+                                                </svg>
+                                            )}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -1672,7 +1705,9 @@ export default function TrainingLibraryPage() {
                                             className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${isAnimating ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-zinc-700 text-white hover:bg-zinc-600'
                                                 }`}
                                         >
-                                            ▶
+                                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                                            </svg>
                                         </button>
                                     </div>
 
@@ -1766,7 +1801,10 @@ export default function TrainingLibraryPage() {
                                                         onClick={(e) => { e.stopPropagation(); deleteStep(index); }}
                                                         className="flex h-6 w-6 items-center justify-center rounded text-zinc-500 hover:bg-zinc-700 hover:text-white"
                                                     >
-                                                        ×
+                                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                                        </svg>
                                                     </button>
                                                 )}
                                             </div>
@@ -1849,7 +1887,12 @@ export default function TrainingLibraryPage() {
                                                     {currentPlan.tags.map(tag => (
                                                         <span key={tag} className="flex items-center gap-1 rounded bg-blue-600/20 px-2 py-1 text-xs text-blue-400">
                                                             {tag}
-                                                            <button onClick={() => handleRemoveTag(tag)} className="hover:text-white">×</button>
+                                                            <button onClick={() => handleRemoveTag(tag)} className="hover:text-white">
+                                                                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                                                </svg>
+                                                            </button>
                                                         </span>
                                                     ))}
                                                 </div>
@@ -2026,15 +2069,126 @@ export default function TrainingLibraryPage() {
     );
 }
 
-function ToolButton({ icon, active, onClick, title }: { icon: string; active: boolean; onClick: () => void; title: string }) {
+function ToolButton({ icon, active, onClick, title }: { icon: React.ReactNode; active: boolean; onClick: () => void; title: string }) {
     return (
         <button
             onClick={onClick}
             title={title}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-all ${active ? 'bg-blue-600 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all ${active ? 'bg-blue-600 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                 }`}
         >
             {icon}
         </button>
     );
 }
+
+// Modern SVG Icons
+const Icons = {
+    circle: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="8" />
+        </svg>
+    ),
+    rectangle: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="4" y="6" width="16" height="12" rx="1" />
+        </svg>
+    ),
+    zone: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="4" y="6" width="16" height="12" rx="2" strokeDasharray="4 2" />
+        </svg>
+    ),
+    line: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="5" y1="19" x2="19" y2="5" />
+        </svg>
+    ),
+    arrow: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="19" x2="19" y2="5" />
+            <polyline points="10,5 19,5 19,14" />
+        </svg>
+    ),
+    dashedLine: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="4 3">
+            <line x1="5" y1="19" x2="19" y2="5" />
+        </svg>
+    ),
+    text: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="4,7 4,4 20,4 20,7" />
+            <line x1="12" y1="4" x2="12" y2="20" />
+            <line x1="8" y1="20" x2="16" y2="20" />
+        </svg>
+    ),
+    ball: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 3v4.5M12 16.5V21M3 12h4.5M16.5 12H21" />
+            <circle cx="12" cy="12" r="3" fill="currentColor" />
+        </svg>
+    ),
+    cone: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 4L5 20h14L12 4z" />
+        </svg>
+    ),
+    goal: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 6h16v12H4z" />
+            <line x1="4" y1="10" x2="20" y2="10" />
+            <line x1="4" y1="14" x2="20" y2="14" />
+            <line x1="8" y1="6" x2="8" y2="18" />
+            <line x1="12" y1="6" x2="12" y2="18" />
+            <line x1="16" y1="6" x2="16" y2="18" />
+        </svg>
+    ),
+    ladder: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="6" y1="4" x2="6" y2="20" />
+            <line x1="18" y1="4" x2="18" y2="20" />
+            <line x1="6" y1="7" x2="18" y2="7" />
+            <line x1="6" y1="12" x2="18" y2="12" />
+            <line x1="6" y1="17" x2="18" y2="17" />
+        </svg>
+    ),
+    hurdle: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="4" y="10" width="16" height="4" rx="1" fill="currentColor" />
+            <line x1="6" y1="14" x2="6" y2="20" />
+            <line x1="18" y1="14" x2="18" y2="20" />
+        </svg>
+    ),
+    pole: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="10" y="4" width="4" height="16" rx="2" />
+        </svg>
+    ),
+    flag: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="6" y1="4" x2="6" y2="20" />
+            <path d="M6 4h12l-3 4 3 4H6" fill="currentColor" />
+        </svg>
+    ),
+    mannequin: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="3" />
+            <path d="M8 10h8l-1 10h-2v-4h-2v4H9l-1-10z" />
+        </svg>
+    ),
+    select: (
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
+            <path d="M13 13l6 6" />
+        </svg>
+    ),
+    delete: (
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+            <line x1="10" y1="11" x2="10" y2="17" />
+            <line x1="14" y1="11" x2="14" y2="17" />
+        </svg>
+    ),
+};
