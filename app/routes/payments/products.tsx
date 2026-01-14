@@ -106,7 +106,7 @@ export default function ProductsPage() {
       const price: ProductPrice = {
         id: `price_${Date.now()}`,
         amount: newProduct.priceAmount,
-        currency: "JOD",
+        currency: "USD",
         type: newProduct.priceType,
         active: true,
       };
@@ -428,7 +428,7 @@ export default function ProductsPage() {
               )}
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Price Amount (JOD)
+                  Price Amount (USD)
                 </label>
                 <Input
                   type="number"

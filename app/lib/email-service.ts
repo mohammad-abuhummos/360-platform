@@ -2,13 +2,23 @@ import emailjs from '@emailjs/browser';
 import type { Invoice } from './firestore-payments';
 import { formatCurrency, formatDate } from './stripe';
 
-// EmailJS Configuration - Replace with your actual credentials
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_id';
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_id';
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'public_key';
+// EmailJS Configuration
+// Get your credentials from: https://dashboard.emailjs.com/admin/account
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
+
+// Check if EmailJS is configured
+export function isEmailJSConfigured(): boolean {
+    return !!(EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY);
+}
 
 // Initialize EmailJS
 export function initEmailJS(): void {
+    if (!EMAILJS_PUBLIC_KEY) {
+        console.warn('EmailJS Public Key not configured. Set VITE_EMAILJS_PUBLIC_KEY in your .env file');
+        return;
+    }
     emailjs.init(EMAILJS_PUBLIC_KEY);
 }
 
@@ -37,7 +47,7 @@ export function generateInvoiceEmailHTML(
 ): string {
     const amountFormatted = formatCurrency(invoice.amountDue, invoice.currency);
     const dueDateFormatted = formatDate(invoice.dueDate);
-    
+
     // Generate line items HTML if available
     let lineItemsHTML = '';
     if (invoice.lineItems && invoice.lineItems.length > 0) {
@@ -97,10 +107,10 @@ export function generateInvoiceEmailHTML(
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td>
-                                        ${organizationLogo 
-                                            ? `<img src="${organizationLogo}" alt="${organizationName}" style="height: 48px; width: auto;">` 
-                                            : `<h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">${organizationName}</h1>`
-                                        }
+                                        ${organizationLogo
+            ? `<img src="${organizationLogo}" alt="${organizationName}" style="height: 48px; width: auto;">`
+            : `<h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">${organizationName}</h1>`
+        }
                                     </td>
                                     <td style="text-align: right;">
                                         <span style="display: inline-block; background-color: rgba(255,255,255,0.2); color: #ffffff; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;">
@@ -249,9 +259,15 @@ export async function sendInvoiceEmail(
     organizationName: string,
     organizationLogo?: string
 ): Promise<{ success: boolean; message: string }> {
+    // Check if EmailJS is configured
+    if (!isEmailJSConfigured()) {
+        return {
+            success: false,
+            message: 'EmailJS is not configured. Please add VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and VITE_EMAILJS_PUBLIC_KEY to your .env file. Get these from https://dashboard.emailjs.com/admin/account'
+        };
+    }
+
     try {
-        const htmlContent = generateInvoiceEmailHTML(invoice, paymentLink, organizationName, organizationLogo);
-        
         const templateParams: InvoiceEmailData = {
             to_email: invoice.recipientEmail,
             to_name: invoice.recipientName,
@@ -260,17 +276,16 @@ export async function sendInvoiceEmail(
             currency: invoice.currency,
             due_date: formatDate(invoice.dueDate),
             payment_link: paymentLink,
-            product_name: invoice.productName,
+            product_name: invoice.productName || 'Invoice Payment',
             organization_name: organizationName,
             organization_logo: organizationLogo,
             notes: invoice.notes,
-            line_items_html: htmlContent,
         };
 
         const response = await emailjs.send(
             EMAILJS_SERVICE_ID,
             EMAILJS_TEMPLATE_ID,
-            templateParams,
+            templateParams as unknown as Record<string, unknown>,
             EMAILJS_PUBLIC_KEY
         );
 
@@ -281,9 +296,31 @@ export async function sendInvoiceEmail(
         }
     } catch (error) {
         console.error('Error sending invoice email:', error);
-        return { 
-            success: false, 
-            message: error instanceof Error ? error.message : 'Failed to send invoice email' 
+        const errorMessage = error instanceof Error ? error.message : 'Failed to send invoice email';
+
+        // Provide helpful error messages
+        if (errorMessage.includes('Public Key is invalid')) {
+            return {
+                success: false,
+                message: 'Invalid EmailJS Public Key. Get your key from https://dashboard.emailjs.com/admin/account'
+            };
+        }
+        if (errorMessage.includes('service_id')) {
+            return {
+                success: false,
+                message: 'Invalid EmailJS Service ID. Get your Service ID from https://dashboard.emailjs.com/admin'
+            };
+        }
+        if (errorMessage.includes('template_id')) {
+            return {
+                success: false,
+                message: 'Invalid EmailJS Template ID. Create a template at https://dashboard.emailjs.com/admin/templates'
+            };
+        }
+
+        return {
+            success: false,
+            message: errorMessage
         };
     }
 }

@@ -14,13 +14,15 @@ export function getStripe(): Promise<Stripe | null> {
 }
 
 // Generate a payment link for an invoice
-// Note: In production, you'd create this via Stripe API on the server
-// For now, we'll use Stripe Payment Links or Checkout Sessions
+// This creates a link that redirects to the checkout page, which then creates a Stripe session
 export function generatePaymentLink(invoiceId: string, amount: number, currency: string, recipientEmail: string): string {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    // This creates a link that will redirect to a payment page
-    // In production, you'd create a Stripe Checkout Session on the server
-    return `${baseUrl}/pay/${invoiceId}?amount=${amount}&currency=${currency}&email=${encodeURIComponent(recipientEmail)}`;
+    return `${baseUrl}/payments/checkout?` + new URLSearchParams({
+        invoiceId,
+        amount: amount.toString(),
+        currency,
+        email: recipientEmail,
+    }).toString();
 }
 
 // Create checkout session redirect (client-side)
@@ -60,9 +62,61 @@ export function generateInvoiceNumber(prefix = 'INV'): string {
     return `${prefix}-${timestamp}-${random}`;
 }
 
+// Supported currencies for Stripe checkout
+const STRIPE_SUPPORTED_CURRENCIES = [
+    'usd', 'aed', 'afn', 'all', 'amd', 'ang', 'aoa', 'ars', 'aud', 'awg', 'azn',
+    'bam', 'bbd', 'bdt', 'bgn', 'bif', 'bmd', 'bnd', 'bob', 'brl', 'bsd', 'bwp',
+    'byn', 'bzd', 'cad', 'cdf', 'chf', 'clp', 'cny', 'cop', 'crc', 'cve', 'czk',
+    'djf', 'dkk', 'dop', 'dzd', 'egp', 'etb', 'eur', 'fjd', 'fkp', 'gbp', 'gel',
+    'gip', 'gmd', 'gnf', 'gtq', 'gyd', 'hkd', 'hnl', 'hrk', 'htg', 'huf', 'idr',
+    'ils', 'inr', 'isk', 'jmd', 'jpy', 'kes', 'kgs', 'khr', 'kmf', 'krw', 'kyd',
+    'kzt', 'lak', 'lbp', 'lkr', 'lrd', 'lsl', 'mad', 'mdl', 'mga', 'mkd', 'mmk',
+    'mnt', 'mop', 'mur', 'mvr', 'mwk', 'mxn', 'myr', 'mzn', 'nad', 'ngn', 'nio',
+    'nok', 'npr', 'nzd', 'pab', 'pen', 'pgk', 'php', 'pkr', 'pln', 'pyg', 'qar',
+    'ron', 'rsd', 'rub', 'rwf', 'sar', 'sbd', 'scr', 'sek', 'sgd', 'shp', 'sle',
+    'sos', 'srd', 'std', 'szl', 'thb', 'tjs', 'top', 'try', 'ttd', 'twd', 'tzs',
+    'uah', 'ugx', 'uyu', 'uzs', 'vnd', 'vuv', 'wst', 'xaf', 'xcd', 'xcg', 'xof',
+    'xpf', 'yer', 'zar', 'zmw'
+];
+
+// Currency conversion rates (approximate rates - in production, use a live API)
+const CURRENCY_CONVERSION_RATES: Record<string, number> = {
+    'jod': 1.41,  // 1 JOD ≈ 1.41 USD
+    'kwd': 3.26,  // 1 KWD ≈ 3.26 USD
+    'bhd': 2.65,  // 1 BHD ≈ 2.65 USD
+    'omr': 2.60,  // 1 OMR ≈ 2.60 USD
+};
+
+// Convert unsupported currency to USD
+export function convertToSupportedCurrency(amount: number, currency: string): { amount: number; currency: string; converted: boolean; originalCurrency?: string; originalAmount?: number } {
+    const currencyLower = currency.toLowerCase();
+
+    // Check if currency is supported
+    if (STRIPE_SUPPORTED_CURRENCIES.includes(currencyLower)) {
+        return { amount, currency: currencyLower, converted: false };
+    }
+
+    // Convert to USD
+    const rate = CURRENCY_CONVERSION_RATES[currencyLower] || 1;
+    const convertedAmount = Math.round(amount * rate * 100) / 100; // Round to 2 decimal places
+
+    return {
+        amount: convertedAmount,
+        currency: 'usd',
+        converted: true,
+        originalCurrency: currency.toUpperCase(),
+        originalAmount: amount,
+    };
+}
+
+// Check if currency is supported by Stripe
+export function isCurrencySupported(currency: string): boolean {
+    return STRIPE_SUPPORTED_CURRENCIES.includes(currency.toLowerCase());
+}
+
 // Format currency
-export function formatCurrency(amount: number, currency = 'JOD'): string {
-    return new Intl.NumberFormat('en-JO', {
+export function formatCurrency(amount: number, currency = 'USD'): string {
+    return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency,
         minimumFractionDigits: 2,

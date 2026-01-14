@@ -33,4 +33,8 @@ export default [
   route("/payments/subscriptions", "routes/payments/subscriptions.tsx"),
   route("/payments/products", "routes/payments/products.tsx"),
   route("/payments/reports", "routes/payments/reports.tsx"),
+  route("/payments/checkout", "routes/payments/checkout.tsx"),
+  route("/payments/success", "routes/payments/success.tsx"),
+  // API routes
+  route("/api/create-checkout-session", "routes/api/create-checkout-session.ts"),
 ] satisfies RouteConfig;

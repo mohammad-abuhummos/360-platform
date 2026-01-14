@@ -23,6 +23,13 @@ import {
   EllipsisHorizontalIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  PaperAirplaneIcon,
+  CreditCardIcon,
+  EnvelopeIcon,
+  LinkIcon,
+  EyeIcon,
+  CheckIcon,
+  ClipboardDocumentIcon,
 } from "@heroicons/react/24/outline";
 import {
   getInvoices,
@@ -32,7 +39,8 @@ import {
   type Invoice,
   type InvoiceStatus,
 } from "../../lib/firestore-payments";
-import { formatCurrency, formatDate, getInvoiceStatusColor, generateInvoiceNumber } from "../../lib/stripe";
+import { formatCurrency, formatDate, getInvoiceStatusColor, generateInvoiceNumber, generatePaymentLink, redirectToCheckout } from "../../lib/stripe";
+import { sendInvoiceEmail, previewInvoiceEmail, initEmailJS } from "../../lib/email-service";
 import * as Headless from "@headlessui/react";
 import { Timestamp } from "firebase/firestore";
 
@@ -57,7 +65,16 @@ export default function InvoicesPage() {
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<string | null>(null);
   
+  // Send invoice states
+  const [isSendInvoiceOpen, setIsSendInvoiceOpen] = useState(false);
+  const [selectedInvoiceForSend, setSelectedInvoiceForSend] = useState<Invoice | null>(null);
+  const [emailPreviewHtml, setEmailPreviewHtml] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendStatus, setSendStatus] = useState<{ type: "success" | "error" | null; message: string }>({ type: null, message: "" });
+  const [copiedLink, setCopiedLink] = useState(false);
+  
   const pageSize = 30;
+  const organizationName = activeClub?.name || "Jordan Knights Football Club";
 
   // New invoice form state
   const [newInvoice, setNewInvoice] = useState({
@@ -141,7 +158,7 @@ export default function InvoicesPage() {
         recipientName: newInvoice.recipientName,
         recipientEmail: newInvoice.recipientEmail,
         amountDue: newInvoice.amountDue,
-        currency: "JOD",
+        currency: "USD",
         invoiceNumber: generateInvoiceNumber("UATLHQZ"),
         status: "open",
         terms: newInvoice.terms,
@@ -197,6 +214,101 @@ export default function InvoicesPage() {
     } catch (error) {
       console.error("Error deleting invoice:", error);
     }
+  };
+
+  // Open send invoice dialog
+  const handleOpenSendInvoice = (invoice: Invoice) => {
+    setSelectedInvoiceForSend(invoice);
+    const paymentLink = generatePaymentLink(
+      invoice.id!,
+      invoice.amountDue,
+      invoice.currency,
+      invoice.recipientEmail
+    );
+    const html = previewInvoiceEmail(invoice, paymentLink, organizationName);
+    setEmailPreviewHtml(html);
+    setIsSendInvoiceOpen(true);
+    setSendStatus({ type: null, message: "" });
+  };
+
+  // Send invoice email
+  const handleSendInvoiceEmail = async () => {
+    if (!selectedInvoiceForSend) return;
+    
+    setIsSending(true);
+    setSendStatus({ type: null, message: "" });
+
+    try {
+      initEmailJS();
+      
+      const paymentLink = generatePaymentLink(
+        selectedInvoiceForSend.id!,
+        selectedInvoiceForSend.amountDue,
+        selectedInvoiceForSend.currency,
+        selectedInvoiceForSend.recipientEmail
+      );
+
+      const result = await sendInvoiceEmail(
+        selectedInvoiceForSend,
+        paymentLink,
+        organizationName
+      );
+
+      if (result.success) {
+        // Update invoice sentAt
+        await updateInvoice(selectedInvoiceForSend.id!, {
+          sentAt: new Date(),
+        });
+        
+        // Update local state
+        setInvoices((prev) =>
+          prev.map((inv) =>
+            inv.id === selectedInvoiceForSend.id
+              ? { ...inv, sentAt: new Date() }
+              : inv
+          )
+        );
+
+        setSendStatus({ type: "success", message: "Invoice sent successfully!" });
+      } else {
+        setSendStatus({ type: "error", message: result.message });
+      }
+    } catch (error) {
+      console.error("Error sending invoice:", error);
+      setSendStatus({ type: "error", message: "Failed to send invoice. Please try again." });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Copy payment link to clipboard
+  const handleCopyPaymentLink = async (invoice: Invoice) => {
+    const paymentLink = generatePaymentLink(
+      invoice.id!,
+      invoice.amountDue,
+      invoice.currency,
+      invoice.recipientEmail
+    );
+    
+    try {
+      await navigator.clipboard.writeText(paymentLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy link:", error);
+    }
+  };
+
+  // Redirect to payment page
+  const handlePayNow = (invoice: Invoice) => {
+    redirectToCheckout(
+      invoice.id!,
+      invoice.amountDue,
+      invoice.currency,
+      invoice.invoiceNumber,
+      invoice.recipientEmail,
+      invoice.productName
+    );
   };
 
   const getDateValue = (date: Date | Timestamp | undefined): Date | undefined => {
@@ -355,7 +467,53 @@ export default function InvoicesPage() {
                         >
                           <EllipsisHorizontalIcon className="h-5 w-5 text-zinc-400" />
                         </Headless.MenuButton>
-                        <Headless.MenuItems className="absolute right-0 z-10 mt-1 w-48 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-zinc-800 dark:ring-white/10">
+                        <Headless.MenuItems className="absolute right-0 z-10 mt-1 w-56 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-zinc-800 dark:ring-white/10">
+                          {/* Payment Actions - for unpaid invoices */}
+                          {invoice.status !== "paid" && invoice.status !== "void" && (
+                            <>
+                              <Headless.MenuItem>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => handleOpenSendInvoice(invoice)}
+                                    className={`${
+                                      active ? "bg-zinc-100 dark:bg-zinc-700" : ""
+                                    } flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300`}
+                                  >
+                                    <EnvelopeIcon className="h-4 w-4" />
+                                    Send invoice
+                                  </button>
+                                )}
+                              </Headless.MenuItem>
+                              <Headless.MenuItem>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => handleCopyPaymentLink(invoice)}
+                                    className={`${
+                                      active ? "bg-zinc-100 dark:bg-zinc-700" : ""
+                                    } flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300`}
+                                  >
+                                    <LinkIcon className="h-4 w-4" />
+                                    {copiedLink ? "Copied!" : "Copy payment link"}
+                                  </button>
+                                )}
+                              </Headless.MenuItem>
+                              <Headless.MenuItem>
+                                {({ active }) => (
+                                  <button
+                                    onClick={() => handlePayNow(invoice)}
+                                    className={`${
+                                      active ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                                    } flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-blue-600 dark:text-blue-400`}
+                                  >
+                                    <CreditCardIcon className="h-4 w-4" />
+                                    Pay now
+                                  </button>
+                                )}
+                              </Headless.MenuItem>
+                              <div className="my-1 border-t border-zinc-200 dark:border-zinc-700" />
+                            </>
+                          )}
+                          
                           {invoice.status !== "paid" && (
                             <Headless.MenuItem>
                               {({ active }) => (
@@ -363,8 +521,9 @@ export default function InvoicesPage() {
                                   onClick={() => handleUpdateStatus(invoice.id!, "paid")}
                                   className={`${
                                     active ? "bg-zinc-100 dark:bg-zinc-700" : ""
-                                  } block w-full px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300`}
+                                  } flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-zinc-700 dark:text-zinc-300`}
                                 >
+                                  <CheckIcon className="h-4 w-4" />
                                   Mark as paid
                                 </button>
                               )}
@@ -482,7 +641,7 @@ export default function InvoicesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Amount Due (JOD)
+                  Amount Due (USD)
                 </label>
                 <Input
                   type="number"
@@ -528,6 +687,152 @@ export default function InvoicesPage() {
             <Button color="blue" onClick={handleCreateInvoice}>
               Create Invoice
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Send Invoice Dialog */}
+        <Dialog 
+          open={isSendInvoiceOpen} 
+          onClose={() => !isSending && setIsSendInvoiceOpen(false)}
+          size="xl"
+        >
+          <DialogTitle>
+            <div className="flex items-center gap-2">
+              <EnvelopeIcon className="h-5 w-5 text-blue-500" />
+              Send Invoice
+            </div>
+          </DialogTitle>
+          <DialogBody>
+            {selectedInvoiceForSend && (
+              <div className="space-y-4">
+                {/* Invoice Summary */}
+                <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-zinc-500">To:</span>
+                      <p className="font-medium text-zinc-900 dark:text-white">
+                        {selectedInvoiceForSend.recipientName}
+                      </p>
+                      <p className="text-blue-600">{selectedInvoiceForSend.recipientEmail}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-zinc-500">Amount:</span>
+                      <p className="text-xl font-bold text-zinc-900 dark:text-white">
+                        {formatCurrency(selectedInvoiceForSend.amountDue, selectedInvoiceForSend.currency)}
+                      </p>
+                      <p className="text-zinc-500">Invoice #{selectedInvoiceForSend.invoiceNumber}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Link */}
+                <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <LinkIcon className="h-5 w-5 text-zinc-400" />
+                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Payment Link
+                      </span>
+                    </div>
+                    <Button
+                      outline
+                      className="flex items-center gap-1.5 text-xs"
+                      onClick={() => handleCopyPaymentLink(selectedInvoiceForSend)}
+                    >
+                      {copiedLink ? (
+                        <>
+                          <CheckIcon className="h-4 w-4 text-emerald-500" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <ClipboardDocumentIcon className="h-4 w-4" />
+                          Copy Link
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="mt-2 truncate text-xs text-zinc-500">
+                    {generatePaymentLink(
+                      selectedInvoiceForSend.id!,
+                      selectedInvoiceForSend.amountDue,
+                      selectedInvoiceForSend.currency,
+                      selectedInvoiceForSend.recipientEmail
+                    )}
+                  </p>
+                </div>
+
+                {/* Email Preview */}
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <EyeIcon className="h-4 w-4 text-zinc-400" />
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Email Preview
+                    </span>
+                  </div>
+                  <div className="h-80 overflow-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-700">
+                    <iframe
+                      srcDoc={emailPreviewHtml}
+                      className="h-full w-full"
+                      title="Invoice Email Preview"
+                    />
+                  </div>
+                </div>
+
+                {/* Status Message */}
+                {sendStatus.type && (
+                  <div
+                    className={`rounded-lg p-3 text-sm ${
+                      sendStatus.type === "success"
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                        : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                    }`}
+                  >
+                    {sendStatus.message}
+                  </div>
+                )}
+
+                {/* EmailJS Setup Note */}
+                <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                  <strong>Note:</strong> To send emails, configure your EmailJS credentials in the environment variables:
+                  <code className="ml-1 rounded bg-amber-100 px-1 dark:bg-amber-900/30">
+                    VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, VITE_EMAILJS_PUBLIC_KEY
+                  </code>
+                </div>
+              </div>
+            )}
+          </DialogBody>
+          <DialogActions>
+            <Button
+              outline
+              onClick={() => setIsSendInvoiceOpen(false)}
+              disabled={isSending}
+            >
+              {sendStatus.type === "success" ? "Close" : "Cancel"}
+            </Button>
+            {sendStatus.type !== "success" && (
+              <Button
+                color="blue"
+                onClick={handleSendInvoiceEmail}
+                disabled={isSending}
+                className="flex items-center gap-2"
+              >
+                {isSending ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <PaperAirplaneIcon className="h-4 w-4" />
+                    Send Invoice
+                  </>
+                )}
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       </div>

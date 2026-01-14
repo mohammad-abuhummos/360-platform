@@ -27,7 +27,7 @@ const products = [
       {
         id: "price_winter_2025",
         amount: 250,
-        currency: "JOD",
+        currency: "USD",
         type: "one_time" as const,
         active: true,
       },
@@ -42,7 +42,7 @@ const products = [
       {
         id: "price_dubai_2025",
         amount: 1250,
-        currency: "JOD",
+        currency: "USD",
         type: "one_time" as const,
         active: true,
       },
@@ -57,7 +57,7 @@ const products = [
       {
         id: "price_kit_2025",
         amount: 85,
-        currency: "JOD",
+        currency: "USD",
         type: "one_time" as const,
         active: true,
       },
@@ -72,7 +72,7 @@ const products = [
       {
         id: "price_winter_pkg",
         amount: 120,
-        currency: "JOD",
+        currency: "USD",
         type: "one_time" as const,
         active: true,
       },
@@ -87,7 +87,7 @@ const products = [
       {
         id: "price_reg_monthly",
         amount: 75,
-        currency: "JOD",
+        currency: "USD",
         type: "recurring" as const,
         interval: "month" as const,
         intervalCount: 1,
@@ -104,7 +104,7 @@ const products = [
       {
         id: "price_premium_monthly",
         amount: 150,
-        currency: "JOD",
+        currency: "USD",
         type: "recurring" as const,
         interval: "month" as const,
         intervalCount: 1,
@@ -203,7 +203,7 @@ export async function seedPaymentData(clubId: string, onProgress?: (message: str
         recipientName: recipient.name,
         recipientEmail: recipient.email,
         amountDue: 1250,
-        currency: 'JOD',
+        currency: 'USD',
         invoiceNumber: generateInvoiceNumber(i),
         status,
         productId: product.id,
@@ -247,7 +247,7 @@ export async function seedPaymentData(clubId: string, onProgress?: (message: str
         recipientName: recipient.name,
         recipientEmail: recipient.email,
         amountDue: Math.floor(Math.random() * 1500) + 100,
-        currency: 'JOD',
+        currency: 'USD',
         invoiceNumber: generateInvoiceNumber(recipients.length + i),
         status,
         productId: product.id,
