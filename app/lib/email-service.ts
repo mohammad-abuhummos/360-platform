@@ -1,12 +1,12 @@
-import emailjs from '@emailjs/browser';
+import emailjs, { EmailJSResponseStatus } from '@emailjs/browser';
 import type { Invoice } from './firestore-payments';
 import { formatCurrency, formatDate } from './stripe';
 
 // EmailJS Configuration
 // Get your credentials from: https://dashboard.emailjs.com/admin/account
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
+const EMAILJS_SERVICE_ID = String(import.meta.env.VITE_EMAILJS_SERVICE_ID ?? '').trim();
+const EMAILJS_TEMPLATE_ID = String(import.meta.env.VITE_EMAILJS_TEMPLATE_ID ?? '').trim();
+const EMAILJS_PUBLIC_KEY = String(import.meta.env.VITE_EMAILJS_PUBLIC_KEY ?? '').trim();
 
 // Check if EmailJS is configured
 export function isEmailJSConfigured(): boolean {
@@ -19,7 +19,8 @@ export function initEmailJS(): void {
         console.warn('EmailJS Public Key not configured. Set VITE_EMAILJS_PUBLIC_KEY in your .env file');
         return;
     }
-    emailjs.init(EMAILJS_PUBLIC_KEY);
+    // @emailjs/browser v4 expects an options object
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 }
 
 // Invoice email data interface
@@ -268,6 +269,9 @@ export async function sendInvoiceEmail(
     }
 
     try {
+        // Ensure EmailJS has a global public key configured (safe to call multiple times)
+        initEmailJS();
+
         const templateParams: InvoiceEmailData = {
             to_email: invoice.recipientEmail,
             to_name: invoice.recipientName,
@@ -286,7 +290,8 @@ export async function sendInvoiceEmail(
             EMAILJS_SERVICE_ID,
             EMAILJS_TEMPLATE_ID,
             templateParams as unknown as Record<string, unknown>,
-            EMAILJS_PUBLIC_KEY
+            // @emailjs/browser v4 expects an options object here too
+            { publicKey: EMAILJS_PUBLIC_KEY }
         );
 
         if (response.status === 200) {
@@ -296,13 +301,22 @@ export async function sendInvoiceEmail(
         }
     } catch (error) {
         console.error('Error sending invoice email:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to send invoice email';
+        const errorMessage =
+            error instanceof EmailJSResponseStatus
+                ? error.text
+                : error instanceof Error
+                    ? error.message
+                    : typeof error === 'string'
+                        ? error
+                        : 'Failed to send invoice email';
 
         // Provide helpful error messages
         if (errorMessage.includes('Public Key is invalid')) {
             return {
                 success: false,
-                message: 'Invalid EmailJS Public Key. Get your key from https://dashboard.emailjs.com/admin/account'
+                message:
+                    'EmailJS rejected the Public Key. Double-check VITE_EMAILJS_PUBLIC_KEY (EmailJS Dashboard → Account → API Keys). ' +
+                    'Also check EmailJS Dashboard → Account → General → Security and DISABLE "Use Private Key (recommended)" when using the browser SDK (@emailjs/browser).'
             };
         }
         if (errorMessage.includes('service_id')) {
