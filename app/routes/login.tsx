@@ -189,7 +189,7 @@ export default function Login() {
                                         id="userName"
                                         name="userName"
                                         type="text"
-                                        placeholder="superadmin"
+                                        placeholder="username"
                                         autoComplete="username"
                                         required
                                     />
