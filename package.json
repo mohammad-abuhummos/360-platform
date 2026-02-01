@@ -6,10 +6,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc",
-    "generate:api": "node ./scripts/generate-api.mjs",
-    "seed:users": "npx tsx scripts/seed-test-users.ts",
-    "seed:payments": "npx tsx scripts/seed-payments.ts"
+    "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

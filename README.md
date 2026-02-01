@@ -34,6 +34,17 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+### API (Swagger-tag grouped, v1-ready)
+
+The frontend API client lives under `app/api/v1/` and is organized by Swagger tag (example: `Sports` → `app/api/v1/sports.ts`).
+
+- Global config (via `.env`, see `.env.example`):
+  - `VITE_API_BASE_URL` (recommended; required for SSR/loader calls)
+  - `VITE_API_BASE_PATH` (set to `/api/v1` to switch to v1 endpoints)
+  - `VITE_API_LOGS` (global logging on/off)
+- Per-request logging override:
+  - Pass `{ log: true }` (or `false`) in the request options.
+
 ## Building for Production
 
 Create a production build:
