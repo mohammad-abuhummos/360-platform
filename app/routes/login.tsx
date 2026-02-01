@@ -1,8 +1,10 @@
 import clsx from "clsx";
 import { useEffect, useState, type FormEvent } from "react";
 import type { Route } from "./+types/login";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
+import { InputGroup } from "../components/input";
 import { Fieldset, Field, Label } from "../components/fieldset";
 import { Checkbox, CheckboxField, CheckboxGroup } from "../components/checkbox";
 import { Heading } from "../components/heading";
@@ -22,7 +24,8 @@ export default function Login() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [theme, setTheme] = useState<"light" | "dark">("dark");
     const [formError, setFormError] = useState<string | null>(null);
-    const { signIn, error: authError, loading: authLoading, firebaseUser } = useAuth();
+    const [showPassword, setShowPassword] = useState(false);
+    const { signIn, error: authError, loading: authLoading, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const isDark = theme === "dark";
 
@@ -66,11 +69,12 @@ export default function Login() {
         setIsSubmitting(true);
 
         const formData = new FormData(event.currentTarget);
-        const email = (formData.get("email") as string | null)?.trim() ?? "";
+        const userName = (formData.get("userName") as string | null)?.trim() ?? "";
         const password = (formData.get("password") as string | null) ?? "";
+        const remember = (formData.get("remember") as string | null) != null;
 
         try {
-            await signIn(email, password);
+            await signIn(userName, password, { persist: remember });
             navigate("/", { replace: true });
         } catch (error) {
             const message =
@@ -82,10 +86,10 @@ export default function Login() {
     };
 
     useEffect(() => {
-        if (firebaseUser) {
+        if (isAuthenticated) {
             navigate("/", { replace: true });
         }
-    }, [firebaseUser, navigate]);
+    }, [isAuthenticated, navigate]);
 
     const backgroundGradient = isDark
         ? "linear-gradient(155deg,hsl(0, 0%, 25%), hsl(0, 0%, 0%))"
@@ -174,19 +178,47 @@ export default function Login() {
                         </div>
 
                         <Text className="mt-6 text-zinc-600 dark:text-zinc-400">
-                            Sign in with your credentials to continue. You can plug in your
-                            preferred auth API inside this flow once it&apos;s ready.
+                            Sign in with your username and password to continue.
                         </Text>
 
                         <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-6">
                             <Fieldset className="space-y-6">
                                 <Field>
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+                                    <Label htmlFor="userName">Username</Label>
+                                    <Input
+                                        id="userName"
+                                        name="userName"
+                                        type="text"
+                                        placeholder="superadmin"
+                                        autoComplete="username"
+                                        required
+                                    />
                                 </Field>
                                 <Field>
                                     <Label htmlFor="password">Password</Label>
-                                    <Input id="password" name="password" type="password" placeholder="********" required />
+                                    <InputGroup>
+                                        <Input
+                                            id="password"
+                                            name="password"
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="********"
+                                            autoComplete="current-password"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword((v) => !v)}
+                                            className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-md p-1 text-zinc-500 hover:text-zinc-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                            title={showPassword ? "Hide password" : "Show password"}
+                                        >
+                                            {showPassword ? (
+                                                <EyeSlashIcon className="h-5 w-5" />
+                                            ) : (
+                                                <EyeIcon className="h-5 w-5" />
+                                            )}
+                                        </button>
+                                    </InputGroup>
                                 </Field>
                             </Fieldset>
 

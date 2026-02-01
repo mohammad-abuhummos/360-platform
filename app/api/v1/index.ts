@@ -4,6 +4,7 @@ export type { ApiClient, ApiRequestOptions } from "./types";
 
 export { request } from "./request";
 export type { HttpMethod, TemplateApiRequestOptions } from "./request";
+export * from "./token";
 
 export * from "./appconnect";
 export * from "./auth";

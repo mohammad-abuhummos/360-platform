@@ -56,7 +56,7 @@ export default function App() {
 function AuthGate() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { firebaseUser, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const isLoginRoute = location.pathname.startsWith("/login");
   const isPublicFormRoute = location.pathname.startsWith("/forms/");
   const isBrowser = typeof window !== "undefined";
@@ -67,12 +67,12 @@ function AuthGate() {
     }
 
     // Don't require auth for login or public form routes
-    if (!firebaseUser && !isLoginRoute && !isPublicFormRoute) {
+    if (!isAuthenticated && !isLoginRoute && !isPublicFormRoute) {
       navigate("/login", { replace: true, state: { from: location.pathname } });
-    } else if (firebaseUser && isLoginRoute) {
+    } else if (isAuthenticated && isLoginRoute) {
       navigate("/", { replace: true });
     }
-  }, [firebaseUser, loading, isLoginRoute, isPublicFormRoute, isBrowser, navigate, location.pathname]);
+  }, [isAuthenticated, loading, isLoginRoute, isPublicFormRoute, isBrowser, navigate, location.pathname]);
 
   if (!isBrowser) {
     return <Outlet />;

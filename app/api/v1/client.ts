@@ -1,5 +1,6 @@
 import { getApiConfig } from "./config";
 import { ApiError, type ApiClient, type ApiRequestOptions, type CreateApiClientArgs, type QueryValue } from "./types";
+import { getStoredApiToken } from "./token";
 
 function stripTrailingSlash(value: string): string {
   return value.endsWith("/") ? value.slice(0, -1) : value;
@@ -70,6 +71,10 @@ async function getFirebaseIdToken(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+async function getBrowserApiToken(): Promise<string | null> {
+  return getStoredApiToken();
 }
 
 export function createApiClient(args: CreateApiClientArgs): ApiClient {
@@ -198,6 +203,7 @@ export const apiV1: ApiClient = (() => {
     baseUrl: cfg.baseUrl,
     basePath: cfg.basePath,
     defaultLogEnabled: cfg.logsEnabled,
+    getBearerToken: getBrowserApiToken,
   });
 })();
 
@@ -211,6 +217,7 @@ export const apiRoot: ApiClient = (() => {
     baseUrl: cfg.baseUrl,
     basePath: "",
     defaultLogEnabled: cfg.logsEnabled,
+    getBearerToken: getBrowserApiToken,
   });
 })();
 
