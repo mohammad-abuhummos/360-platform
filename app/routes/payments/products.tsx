@@ -55,6 +55,8 @@ export default function ProductsPage() {
   const [isNewProductOpen, setIsNewProductOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [inlineNewCategory, setInlineNewCategory] = useState("");
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   // New product form state
   const [newProduct, setNewProduct] = useState({
@@ -138,6 +140,7 @@ export default function ProductsPage() {
         priceType: "one_time",
         interval: "month",
       });
+      setInlineNewCategory("");
     } catch (error) {
       console.error("Error creating product:", error);
     }
@@ -166,6 +169,27 @@ export default function ProductsPage() {
       setNewCategoryName("");
     } catch (error) {
       console.error("Error creating category:", error);
+    }
+  };
+
+  const handleCreateCategoryInline = async () => {
+    if (!clubId || !inlineNewCategory.trim()) return;
+
+    try {
+      setIsCreatingCategory(true);
+      await createProductCategory({
+        name: inlineNewCategory.trim(),
+        clubId,
+      });
+
+      const refreshedCategories = await getProductCategories(clubId);
+      setCategories(refreshedCategories);
+      setNewProduct((prev) => ({ ...prev, category: inlineNewCategory.trim() }));
+      setInlineNewCategory("");
+    } catch (error) {
+      console.error("Error creating category:", error);
+    } finally {
+      setIsCreatingCategory(false);
     }
   };
 
@@ -342,7 +366,13 @@ export default function ProductsPage() {
         </div>
 
         {/* New Product Dialog */}
-        <Dialog open={isNewProductOpen} onClose={() => setIsNewProductOpen(false)}>
+        <Dialog
+          open={isNewProductOpen}
+          onClose={() => {
+            setIsNewProductOpen(false);
+            setInlineNewCategory("");
+          }}
+        >
           <DialogTitle>Create New Product</DialogTitle>
           <DialogBody>
             <div className="space-y-4">
@@ -385,6 +415,29 @@ export default function ProductsPage() {
                     </option>
                   ))}
                 </select>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    type="text"
+                    value={inlineNewCategory}
+                    onChange={(e) => setInlineNewCategory(e.target.value)}
+                    placeholder="Or create new category"
+                    className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void handleCreateCategoryInline();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    outline
+                    onClick={handleCreateCategoryInline}
+                    disabled={!inlineNewCategory.trim() || isCreatingCategory}
+                  >
+                    {isCreatingCategory ? "Adding…" : "Add"}
+                  </Button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
