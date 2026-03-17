@@ -22,7 +22,8 @@ import {
 } from "firebase/firestore";
 import { initializeApp, deleteApp, getApps } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { db } from "~/lib/firebase";
+import { db, storage, ref, uploadBytesResumable, getDownloadURL } from "~/lib/firebase";
+import { updateUserStatus } from "~/lib/firestore-users";
 
 // Firebase config for secondary app (same as main app)
 const firebaseConfig = {
@@ -36,19 +37,57 @@ const firebaseConfig = {
 
 export type MemberRole = "User" | "Staff" | "Admin";
 export type MemberSegment = "player" | "staff";
-export type MemberStatus = "active" | "invited";
+export type MemberStatus = "active" | "invited" | "inactive";
+
+export type BillingAddress = {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+};
+
+export type PlayerProfile = {
+    firstName?: string;
+    lastName?: string;
+    companyName?: string;
+    taxValue?: string;
+    taxType?: string;
+    taxId?: string;
+    gender?: string;
+    emergencyContactNumber?: string;
+    englishFullName?: string;
+    arabicFullName?: string;
+    phoneNumber2?: string;
+    phoneNumber3?: string;
+    imageConsent?: boolean | string;
+    hasSiblingsAtClub?: boolean | string;
+    codeOfConductAccepted?: boolean | string;
+    kitSize?: string;
+    faNumber?: string;
+    headshotImageUrl?: string;
+    additionalImageUrls?: string[];
+    billingAddress?: BillingAddress;
+};
 
 export type ClubMember = {
     id: string;
     name: string;
     initials: string;
     role: MemberRole;
+    roleId?: string | null;
+    roleName?: string | null;
     title?: string | null;
     email: string;
     segment: MemberSegment;
     status: MemberStatus;
     clubId: string;
-    userId?: string; // Firebase Auth UID if member has a user account
+    userId?: string;
+    phoneNumber?: string | null;
+    dateOfBirth?: string | null;
+    profileImageUrl?: string | null;
+    playerProfile?: PlayerProfile | null;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 };
@@ -58,9 +97,15 @@ type FirestoreMember = Omit<ClubMember, "id">;
 export type InviteMemberPayload = {
     name: string;
     email: string;
-    role: MemberRole;
+    roleId: string;
+    roleName?: string;
     segment: MemberSegment;
     title?: string;
+    phoneNumber?: string;
+    dateOfBirth?: string;
+    profileImageUrl?: string;
+    playerProfile?: Partial<PlayerProfile>;
+    status?: "active" | "invited" | "inactive";
 };
 
 const CLUBS_COLLECTION = "clubs";
@@ -221,30 +266,44 @@ export function subscribeToClubMembers(
     );
 }
 
-export async function inviteClubMember(clubId: string, payload: InviteMemberPayload) {
+export async function inviteClubMember(clubId: string, payload: InviteMemberPayload): Promise<string> {
     const membersRef = membersCollection(clubId);
     const trimmedName = payload.name.trim();
     const trimmedEmail = payload.email.trim().toLowerCase();
 
-    await addDoc(membersRef, {
+    const memberData: Record<string, unknown> = {
         clubId,
         name: trimmedName,
         initials: getInitials(trimmedName),
-        role: payload.role,
+        roleId: payload.roleId || null,
+        roleName: payload.roleName || null,
         title: payload.title?.trim() || null,
         email: trimmedEmail,
         segment: payload.segment,
-        status: "invited",
+        status: payload.status ?? "active",
+        phoneNumber: payload.phoneNumber?.trim() || null,
+        dateOfBirth: payload.dateOfBirth?.trim() || null,
+        profileImageUrl: payload.profileImageUrl || null,
+        playerProfile: payload.playerProfile || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-    });
+    };
+
+    const docRef = await addDoc(membersRef, memberData);
+    return docRef.id;
 }
 
 export type UpdateMemberPayload = {
     name?: string;
-    role?: MemberRole;
+    roleId?: string | null;
+    roleName?: string | null;
     title?: string | null;
     segment?: MemberSegment;
+    phoneNumber?: string | null;
+    dateOfBirth?: string | null;
+    profileImageUrl?: string | null;
+    playerProfile?: Partial<PlayerProfile> | null;
+    status?: "active" | "invited" | "inactive";
 };
 
 export async function updateClubMember(clubId: string, memberId: string, payload: UpdateMemberPayload) {
@@ -260,8 +319,11 @@ export async function updateClubMember(clubId: string, memberId: string, payload
         updates.initials = getInitials(trimmedName);
     }
 
-    if (payload.role !== undefined) {
-        updates.role = payload.role;
+    if (payload.roleId !== undefined) {
+        updates.roleId = payload.roleId;
+    }
+    if (payload.roleName !== undefined) {
+        updates.roleName = payload.roleName;
     }
 
     if (payload.title !== undefined) {
@@ -272,7 +334,43 @@ export async function updateClubMember(clubId: string, memberId: string, payload
         updates.segment = payload.segment;
     }
 
+    if (payload.phoneNumber !== undefined) {
+        updates.phoneNumber = payload.phoneNumber?.trim() || null;
+    }
+
+    if (payload.dateOfBirth !== undefined) {
+        updates.dateOfBirth = payload.dateOfBirth?.trim() || null;
+    }
+
+    if (payload.profileImageUrl !== undefined) {
+        updates.profileImageUrl = payload.profileImageUrl;
+    }
+
+    if (payload.playerProfile !== undefined) {
+        updates.playerProfile = payload.playerProfile;
+    }
+
+    if (payload.status !== undefined) {
+        updates.status = payload.status;
+        const memberSnap = await getDoc(memberRef);
+        const userId = memberSnap.exists() ? (memberSnap.data() as FirestoreMember).userId : undefined;
+        if (userId) {
+            if (payload.status === "inactive") {
+                await updateUserStatus(userId, "inactive");
+            } else if (payload.status === "active") {
+                await updateUserStatus(userId, "active");
+            }
+        }
+    }
+
     await updateDoc(memberRef, updates);
+}
+
+export async function getClubMemberById(clubId: string, memberId: string): Promise<ClubMember | null> {
+    const memberRef = doc(db, CLUBS_COLLECTION, clubId, MEMBERS_SUBCOLLECTION, memberId);
+    const snap = await getDoc(memberRef);
+    if (!snap.exists()) return null;
+    return formatMember(snap as QueryDocumentSnapshot<DocumentData>);
 }
 
 export async function removeClubMember(clubId: string, memberId: string) {
@@ -280,8 +378,85 @@ export async function removeClubMember(clubId: string, memberId: string) {
     await deleteDoc(memberRef);
 }
 
+export async function getClubMemberByUserId(clubId: string, userId: string): Promise<ClubMember | null> {
+    const membersRef = membersCollection(clubId);
+    const q = query(membersRef, where("userId", "==", userId), limit(1));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    return formatMember(snapshot.docs[0]);
+}
+
+export async function uploadMemberProfileImage(
+    clubId: string,
+    memberId: string,
+    file: File
+): Promise<string> {
+    const ext = file.name.split(".").pop() || "jpg";
+    const storagePath = `clubs/${clubId}/members/${memberId}/profile.${ext}`;
+    const storageRef = ref(storage, storagePath);
+
+    return new Promise((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on(
+            "state_changed",
+            () => {},
+            reject,
+            async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(url);
+            }
+        );
+    });
+}
+
+export async function uploadMemberHeadshotImage(
+    clubId: string,
+    memberId: string,
+    file: File
+): Promise<string> {
+    const ext = file.name.split(".").pop() || "jpg";
+    const storagePath = `clubs/${clubId}/members/${memberId}/headshot.${ext}`;
+    const storageRef = ref(storage, storagePath);
+
+    return new Promise((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on(
+            "state_changed",
+            () => {},
+            reject,
+            async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(url);
+            }
+        );
+    });
+}
+
+export async function uploadMemberAdditionalImage(
+    clubId: string,
+    memberId: string,
+    file: File,
+    index: number
+): Promise<string> {
+    const ext = file.name.split(".").pop() || "jpg";
+    const storagePath = `clubs/${clubId}/members/${memberId}/additional_${index}.${ext}`;
+    const storageRef = ref(storage, storagePath);
+
+    return new Promise((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on(
+            "state_changed",
+            () => {},
+            reject,
+            async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(url);
+            }
+        );
+    });
+}
+
 export async function activateClubMember(clubId: string, memberId: string, generatedPassword: string) {
-    // Get the member data
     const memberRef = doc(db, CLUBS_COLLECTION, clubId, MEMBERS_SUBCOLLECTION, memberId);
     const memberSnap = await getDoc(memberRef);
 
@@ -295,24 +470,19 @@ export async function activateClubMember(clubId: string, memberId: string, gener
         throw new Error("Member is already active");
     }
 
-    // Create Firebase Auth user using a secondary app instance
-    // This prevents signing out the current admin user
     let secondaryApp;
     let userId: string;
 
     try {
-        // Check if secondary app already exists and delete it
         const existingApps = getApps();
         const existingSecondary = existingApps.find(app => app.name === "Secondary");
         if (existingSecondary) {
             await deleteApp(existingSecondary);
         }
 
-        // Initialize a secondary Firebase app
         secondaryApp = initializeApp(firebaseConfig, "Secondary");
         const secondaryAuth = getAuth(secondaryApp);
 
-        // Create the user with email and password
         const userCredential = await createUserWithEmailAndPassword(
             secondaryAuth,
             memberData.email,
@@ -321,25 +491,21 @@ export async function activateClubMember(clubId: string, memberId: string, gener
 
         userId = userCredential.user.uid;
 
-        // Update the user's display name
         await updateProfile(userCredential.user, {
             displayName: memberData.name,
         });
 
-        // Sign out from secondary auth (important!)
         await secondaryAuth.signOut();
 
     } catch (authError: unknown) {
-        // Clean up secondary app if it exists
         if (secondaryApp) {
             try {
                 await deleteApp(secondaryApp);
             } catch {
-                // Ignore cleanup errors
+                // ignore
             }
         }
 
-        // Handle specific Firebase Auth errors
         if (authError && typeof authError === "object" && "code" in authError) {
             const errorCode = (authError as { code: string }).code;
             if (errorCode === "auth/email-already-in-use") {
@@ -354,31 +520,30 @@ export async function activateClubMember(clubId: string, memberId: string, gener
         }
         throw authError;
     } finally {
-        // Always clean up secondary app
         if (secondaryApp) {
             try {
                 await deleteApp(secondaryApp);
             } catch {
-                // Ignore cleanup errors
+                // ignore
             }
         }
     }
 
-    // Create user document in Firestore users collection
-    const userRef = doc(db, "users", userId);
     const userRole = memberData.role === "Admin" ? "admin" : memberData.role === "Staff" ? "staff" : "player";
 
+    const userRef = doc(db, "users", userId);
     await setDoc(userRef, {
         email: memberData.email,
         displayName: memberData.name,
         role: userRole,
+        roleId: memberData.roleId ?? null,
         clubIds: [clubId],
         activeClubId: clubId,
+        status: "active",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
 
-    // Add user to club memberships
     const clubRef = doc(db, CLUBS_COLLECTION, clubId);
     const membershipRole = memberData.role === "Admin" ? "Administrator" : memberData.role === "Staff" ? "Staff" : "Player";
 
@@ -392,7 +557,6 @@ export async function activateClubMember(clubId: string, memberId: string, gener
         updatedAt: serverTimestamp(),
     });
 
-    // Update member status to active and link to user
     await updateDoc(memberRef, {
         status: "active",
         userId: userId,
@@ -426,58 +590,36 @@ function generatePassword(length = 12): string {
 
 const USER_COLLECTION = "users";
 
-/**
- * Look up a user's Firebase Auth UID by their email address
- */
 export async function getUserIdByEmail(email: string): Promise<string | null> {
     const usersRef = collection(db, USER_COLLECTION);
     const q = query(usersRef, where("email", "==", email), limit(1));
     const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) {
-        return null;
-    }
-    
+    if (snapshot.empty) return null;
     return snapshot.docs[0].id;
 }
 
-/**
- * Look up multiple user IDs by their email addresses
- * Returns a map of email -> userId (null if not found)
- */
 export async function getUserIdsByEmails(emails: string[]): Promise<Map<string, string | null>> {
     const result = new Map<string, string | null>();
-    
-    // Initialize all emails with null
     emails.forEach(email => result.set(email, null));
-    
     if (emails.length === 0) return result;
-    
-    // Firestore 'in' query is limited to 30 items, so batch if needed
+
     const batches: string[][] = [];
     for (let i = 0; i < emails.length; i += 30) {
         batches.push(emails.slice(i, i + 30));
     }
-    
+
     for (const batch of batches) {
         const usersRef = collection(db, USER_COLLECTION);
         const q = query(usersRef, where("email", "in", batch));
         const snapshot = await getDocs(q);
-        
-        snapshot.docs.forEach(doc => {
-            const email = doc.data().email;
-            if (email) {
-                result.set(email, doc.id);
-            }
+        snapshot.docs.forEach(docSnap => {
+            const email = docSnap.data().email;
+            if (email) result.set(email, docSnap.id);
         });
     }
-    
     return result;
 }
 
-/**
- * Update a club member's userId field
- */
 export async function linkMemberToUser(
     clubId: string,
     memberId: string,
@@ -491,5 +633,3 @@ export async function linkMemberToUser(
 }
 
 export { generatePassword };
-
-

@@ -32,6 +32,7 @@ export interface Invoice {
   invoiceNumber: string;
   status: InvoiceStatus;
   assignedContacts?: string[];
+  memberId?: string; // Links to club member when created from profile
   productId?: string;
   productName?: string;
   terms: string; // e.g., "30 days"
@@ -60,6 +61,7 @@ export interface Subscription {
   recipientName: string;
   recipientEmail: string;
   assignedUsers?: string[];
+  memberId?: string; // Links to club member when created from profile
   productId: string;
   productName: string;
   type: SubscriptionType;
@@ -212,6 +214,34 @@ export async function getInvoices(
   const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
 
   return { invoices, lastDoc };
+}
+
+/** Get invoices for a specific profile (filtered by recipientEmail or memberId) */
+export async function getInvoicesForProfile(
+  clubId: string,
+  profile: { email?: string; memberId?: string }
+): Promise<Invoice[]> {
+  const { invoices } = await getInvoices(clubId, { type: 'invoice', pageSize: 500 });
+  const email = profile.email?.toLowerCase().trim();
+  return invoices.filter((inv) => {
+    if (profile.memberId && inv.memberId === profile.memberId) return true;
+    if (email && inv.recipientEmail?.toLowerCase().trim() === email) return true;
+    return false;
+  });
+}
+
+/** Get subscriptions for a specific profile (filtered by recipientEmail or memberId) */
+export async function getSubscriptionsForProfile(
+  clubId: string,
+  profile: { email?: string; memberId?: string }
+): Promise<Subscription[]> {
+  const { subscriptions } = await getSubscriptions(clubId, { pageSize: 500 });
+  const email = profile.email?.toLowerCase().trim();
+  return subscriptions.filter((sub) => {
+    if (profile.memberId && sub.memberId === profile.memberId) return true;
+    if (email && sub.recipientEmail?.toLowerCase().trim() === email) return true;
+    return false;
+  });
 }
 
 export async function getInvoiceStats(clubId: string, dateRange?: { from: Date; to: Date }): Promise<{

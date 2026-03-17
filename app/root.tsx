@@ -9,10 +9,12 @@ import {
   useNavigate,
 } from "react-router";
 import { useEffect } from "react";
+import { Toaster } from "react-hot-toast";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import { AuthProvider, useAuth } from "./context/auth-context";
+import { InactiveUserBlock } from "./components/inactive-user-block";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -38,6 +40,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            className: "dark:bg-zinc-800 dark:text-white dark:border-zinc-700",
+          }}
+        />
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -56,7 +64,7 @@ export default function App() {
 function AuthGate() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { firebaseUser, loading } = useAuth();
+  const { firebaseUser, profile, loading } = useAuth();
   const isLoginRoute = location.pathname.startsWith("/login");
   const isPublicFormRoute = location.pathname.startsWith("/forms/");
   const isBrowser = typeof window !== "undefined";
@@ -84,6 +92,10 @@ function AuthGate() {
         <p className="text-xs font-semibold uppercase tracking-[0.5em]">Loading…</p>
       </div>
     );
+  }
+
+  if (firebaseUser && profile?.status === "inactive") {
+    return <InactiveUserBlock />;
   }
 
   return <Outlet />;

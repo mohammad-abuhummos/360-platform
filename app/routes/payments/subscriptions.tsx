@@ -4,7 +4,6 @@ import { Heading } from "../../components/heading";
 import { Button } from "../../components/button";
 import { Badge } from "../../components/badge";
 import { Input } from "../../components/input";
-import { Dialog, DialogTitle, DialogBody, DialogActions } from "../../components/dialog";
 import { useAuth } from "../../context/auth-context";
 import {
   Table,
@@ -26,13 +25,11 @@ import {
 } from "@heroicons/react/24/outline";
 import {
   getSubscriptions,
-  createSubscription,
   cancelSubscription,
-  getProducts,
   type Subscription,
-  type Product,
   type SubscriptionStatus,
 } from "../../lib/firestore-payments";
+import { CreateSubscriptionModal } from "../../components/payments/create-subscription-modal";
 import { formatDate, getSubscriptionStatusColor } from "../../lib/stripe";
 import * as Headless from "@headlessui/react";
 import { Timestamp } from "firebase/firestore";
@@ -42,20 +39,10 @@ export default function SubscriptionsPage() {
   const clubId = activeClub?.id || "";
 
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [isNewSubOpen, setIsNewSubOpen] = useState(false);
-
-  // New subscription form state
-  const [newSub, setNewSub] = useState({
-    recipientName: "",
-    recipientEmail: "",
-    productId: "",
-    plan: "Monthly",
-    collectionMethod: "charge_automatically" as const,
-  });
 
   useEffect(() => {
     if (!clubId) return;
@@ -63,12 +50,8 @@ export default function SubscriptionsPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [subsResult, productsResult] = await Promise.all([
-          getSubscriptions(clubId, { pageSize: 100 }),
-          getProducts(clubId, { archived: false }),
-        ]);
+        const subsResult = await getSubscriptions(clubId, { pageSize: 100 });
         setSubscriptions(subsResult.subscriptions);
-        setProducts(productsResult);
       } catch (error) {
         console.error("Error fetching subscriptions:", error);
       } finally {
@@ -108,59 +91,10 @@ export default function SubscriptionsPage() {
     setSelectedSubs(newSelected);
   };
 
-  const handleCreateSubscription = async () => {
-    if (!clubId || !newSub.recipientName || !newSub.recipientEmail || !newSub.productId) return;
-
-    try {
-      const product = products.find((p) => p.id === newSub.productId);
-      if (!product) return;
-
-      const startAt = new Date();
-      let currentPeriodEnd = new Date();
-
-      switch (newSub.plan) {
-        case "Monthly":
-          currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
-          break;
-        case "Quarterly":
-          currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 3);
-          break;
-        case "Annually":
-          currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
-          break;
-      }
-
-      await createSubscription({
-        recipientName: newSub.recipientName,
-        recipientEmail: newSub.recipientEmail,
-        productId: newSub.productId,
-        productName: product.title,
-        type: "recurring",
-        paidInstallments: 0,
-        totalInstallments: 0,
-        status: "active",
-        plan: newSub.plan,
-        collectionMethod: newSub.collectionMethod,
-        startAt,
-        currentPeriodEnd,
-        clubId,
-      });
-
-      // Refresh list
-      const { subscriptions: refreshed } = await getSubscriptions(clubId, { pageSize: 100 });
-      setSubscriptions(refreshed);
-
-      setIsNewSubOpen(false);
-      setNewSub({
-        recipientName: "",
-        recipientEmail: "",
-        productId: "",
-        plan: "Monthly",
-        collectionMethod: "charge_automatically",
-      });
-    } catch (error) {
-      console.error("Error creating subscription:", error);
-    }
+  const handleRefreshSubscriptions = async () => {
+    if (!clubId) return;
+    const { subscriptions: refreshed } = await getSubscriptions(clubId, { pageSize: 100 });
+    setSubscriptions(refreshed);
   };
 
   const handleCancelSubscription = async (subId: string) => {
@@ -217,7 +151,7 @@ export default function SubscriptionsPage() {
               onClick={() => setIsNewSubOpen(true)}
             >
               <PlusIcon className="h-4 w-4" />
-              New invoice
+              New subscription
             </Button>
           </div>
         </div>
@@ -282,7 +216,7 @@ export default function SubscriptionsPage() {
                         onClick={() => setIsNewSubOpen(true)}
                       >
                         <PlusIcon className="h-4 w-4" />
-                        New invoice
+                        New subscription
                       </Button>
                     </div>
                   </TableCell>
@@ -360,93 +294,12 @@ export default function SubscriptionsPage() {
         {/* Results count */}
         <div className="text-sm text-zinc-500">{filteredSubs.length} results</div>
 
-        {/* New Subscription Dialog */}
-        <Dialog open={isNewSubOpen} onClose={() => setIsNewSubOpen(false)}>
-          <DialogTitle>Create New Subscription</DialogTitle>
-          <DialogBody>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Recipient Name
-                </label>
-                <Input
-                  type="text"
-                  value={newSub.recipientName}
-                  onChange={(e) => setNewSub({ ...newSub, recipientName: e.target.value })}
-                  placeholder="Enter recipient name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Billing Email
-                </label>
-                <Input
-                  type="email"
-                  value={newSub.recipientEmail}
-                  onChange={(e) => setNewSub({ ...newSub, recipientEmail: e.target.value })}
-                  placeholder="Enter billing email"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Product
-                </label>
-                <select
-                  value={newSub.productId}
-                  onChange={(e) => setNewSub({ ...newSub, productId: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                >
-                  <option value="">Select a product</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Billing Plan
-                </label>
-                <select
-                  value={newSub.plan}
-                  onChange={(e) => setNewSub({ ...newSub, plan: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                >
-                  <option value="Monthly">Monthly</option>
-                  <option value="Quarterly">Quarterly</option>
-                  <option value="Annually">Annually</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Collection Method
-                </label>
-                <select
-                  value={newSub.collectionMethod}
-                  onChange={(e) =>
-                    setNewSub({
-                      ...newSub,
-                      collectionMethod: e.target.value as typeof newSub.collectionMethod,
-                    })
-                  }
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                >
-                  <option value="charge_automatically">Charge automatically</option>
-                  <option value="send_invoice">Send invoice</option>
-                </select>
-              </div>
-            </div>
-          </DialogBody>
-          <DialogActions>
-            <Button outline onClick={() => setIsNewSubOpen(false)}>
-              Cancel
-            </Button>
-            <Button color="blue" onClick={handleCreateSubscription}>
-              Create Subscription
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <CreateSubscriptionModal
+          open={isNewSubOpen}
+          onClose={() => setIsNewSubOpen(false)}
+          clubId={clubId}
+          onSuccess={handleRefreshSubscriptions}
+        />
       </div>
     </DashboardLayout>
   );

@@ -3,6 +3,9 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 export default [
   index("routes/index.tsx"),
   route("/team", "routes/team.tsx"),
+  route("/team/create", "routes/team.create.tsx"),
+  route("/team/:id", "routes/team.$id.tsx"),
+  route("/team/:id/edit", "routes/team.$id.edit.tsx"),
   route("/calendar", "routes/calendar.tsx"),
   route("/events/:eventId", "routes/events.$eventId.tsx"),
   route("/chat", "routes/chat.tsx"),
@@ -35,6 +38,8 @@ export default [
   route("/payments/reports", "routes/payments/reports.tsx"),
   route("/payments/checkout", "routes/payments/checkout.tsx"),
   route("/payments/success", "routes/payments/success.tsx"),
+  
+  route("/settings", "routes/settings.tsx"),
   // API routes
   route("/api/create-checkout-session", "routes/api/create-checkout-session.ts"),
 ] satisfies RouteConfig;

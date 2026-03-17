@@ -33,13 +33,13 @@ import {
 } from "@heroicons/react/24/outline";
 import {
   getInvoices,
-  createInvoice,
   updateInvoice,
   deleteInvoice,
   type Invoice,
   type InvoiceStatus,
 } from "../../lib/firestore-payments";
-import { formatCurrency, formatDate, getInvoiceStatusColor, generateInvoiceNumber, generatePaymentLink, redirectToCheckout } from "../../lib/stripe";
+import { formatCurrency, formatDate, getInvoiceStatusColor, generatePaymentLink, redirectToCheckout } from "../../lib/stripe";
+import { CreateInvoiceModal } from "../../components/payments/create-invoice-modal";
 import { sendInvoiceEmail, previewInvoiceEmail, initEmailJS } from "../../lib/email-service";
 import * as Headless from "@headlessui/react";
 import { Timestamp } from "firebase/firestore";
@@ -75,15 +75,6 @@ export default function InvoicesPage() {
   
   const pageSize = 30;
   const organizationName = activeClub?.name || "Jordan Knights Football Club";
-
-  // New invoice form state
-  const [newInvoice, setNewInvoice] = useState({
-    recipientName: "",
-    recipientEmail: "",
-    amountDue: 0,
-    terms: "30 days",
-    notes: "",
-  });
 
   useEffect(() => {
     if (!clubId) return;
@@ -145,47 +136,13 @@ export default function InvoicesPage() {
     setSelectedInvoices(newSelected);
   };
 
-  const handleCreateInvoice = async () => {
-    if (!clubId || !newInvoice.recipientName || !newInvoice.recipientEmail) return;
-
-    try {
-      const dueDate = new Date();
-      const daysMatch = newInvoice.terms.match(/(\d+)/);
-      const days = daysMatch ? parseInt(daysMatch[1]) : 30;
-      dueDate.setDate(dueDate.getDate() + days);
-
-      await createInvoice({
-        recipientName: newInvoice.recipientName,
-        recipientEmail: newInvoice.recipientEmail,
-        amountDue: newInvoice.amountDue,
-        currency: "USD",
-        invoiceNumber: generateInvoiceNumber("UATLHQZ"),
-        status: "open",
-        terms: newInvoice.terms,
-        dueDate,
-        type: "invoice",
-        clubId,
-        notes: newInvoice.notes,
-      });
-
-      // Refresh the list
-      const { invoices: refreshedInvoices } = await getInvoices(clubId, {
-        type: "invoice",
-        pageSize: 100,
-      });
-      setInvoices(refreshedInvoices);
-
-      setIsNewInvoiceOpen(false);
-      setNewInvoice({
-        recipientName: "",
-        recipientEmail: "",
-        amountDue: 0,
-        terms: "30 days",
-        notes: "",
-      });
-    } catch (error) {
-      console.error("Error creating invoice:", error);
-    }
+  const handleRefreshInvoices = async () => {
+    if (!clubId) return;
+    const { invoices: refreshedInvoices } = await getInvoices(clubId, {
+      type: activeTab === "invoices" ? "invoice" : activeTab === "refunds" ? "refund" : "credit_note",
+      pageSize: 100,
+    });
+    setInvoices(refreshedInvoices);
   };
 
   const handleUpdateStatus = async (invoiceId: string, status: InvoiceStatus) => {
@@ -612,83 +569,12 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        {/* New Invoice Dialog */}
-        <Dialog open={isNewInvoiceOpen} onClose={() => setIsNewInvoiceOpen(false)}>
-          <DialogTitle>Create New Invoice</DialogTitle>
-          <DialogBody>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Recipient Name
-                </label>
-                <Input
-                  type="text"
-                  value={newInvoice.recipientName}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, recipientName: e.target.value })}
-                  placeholder="Enter recipient name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Email
-                </label>
-                <Input
-                  type="email"
-                  value={newInvoice.recipientEmail}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, recipientEmail: e.target.value })}
-                  placeholder="Enter email address"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Amount Due (USD)
-                </label>
-                <Input
-                  type="number"
-                  value={newInvoice.amountDue}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, amountDue: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Payment Terms
-                </label>
-                <select
-                  value={newInvoice.terms}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, terms: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                >
-                  <option value="7 days">7 days</option>
-                  <option value="14 days">14 days</option>
-                  <option value="30 days">30 days</option>
-                  <option value="60 days">60 days</option>
-                  <option value="90 days">90 days</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Notes (optional)
-                </label>
-                <textarea
-                  value={newInvoice.notes}
-                  onChange={(e) => setNewInvoice({ ...newInvoice, notes: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                  rows={3}
-                  placeholder="Add any notes..."
-                />
-              </div>
-            </div>
-          </DialogBody>
-          <DialogActions>
-            <Button outline onClick={() => setIsNewInvoiceOpen(false)}>
-              Cancel
-            </Button>
-            <Button color="blue" onClick={handleCreateInvoice}>
-              Create Invoice
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <CreateInvoiceModal
+          open={isNewInvoiceOpen}
+          onClose={() => setIsNewInvoiceOpen(false)}
+          clubId={clubId}
+          onSuccess={handleRefreshInvoices}
+        />
 
         {/* Send Invoice Dialog */}
         <Dialog 

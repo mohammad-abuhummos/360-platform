@@ -28,6 +28,8 @@ export type Club = {
     ownerUid: string;
 };
 
+export type UserProfileStatus = "active" | "inactive";
+
 export type UserProfile = {
     id: string;
     email: string;
@@ -35,6 +37,7 @@ export type UserProfile = {
     role: UserRole;
     clubIds: string[];
     activeClubId: string | null;
+    status: UserProfileStatus;
 };
 
 type FirestoreUserDocument = {
@@ -43,6 +46,7 @@ type FirestoreUserDocument = {
     role?: string;
     clubIds?: string[];
     activeClubId?: string | null;
+    status?: string;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 };
@@ -161,6 +165,7 @@ export async function ensureUserProfile(uid: string, email?: string | null, disp
             role: "admin",
             clubIds,
             activeClubId,
+            status: "active",
         };
 
         await setDoc(userRef, {
@@ -169,6 +174,7 @@ export async function ensureUserProfile(uid: string, email?: string | null, disp
             role: profile.role,
             clubIds: profile.clubIds,
             activeClubId: profile.activeClubId,
+            status: profile.status,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         });
@@ -192,6 +198,7 @@ export async function ensureUserProfile(uid: string, email?: string | null, disp
     const role = isUserRole(data.role) ? data.role : "admin";
     const resolvedEmail = data.email ?? email ?? "";
     const resolvedDisplayName = data.displayName ?? displayName ?? resolvedEmail ?? DEFAULT_DISPLAY_NAME;
+    const status = data.status === "inactive" ? "inactive" : "active";
 
     return {
         id: uid,
@@ -200,7 +207,16 @@ export async function ensureUserProfile(uid: string, email?: string | null, disp
         role,
         clubIds,
         activeClubId: data.activeClubId ?? clubIds[0] ?? null,
+        status,
     };
+}
+
+export async function updateUserStatus(uid: string, status: UserProfileStatus): Promise<void> {
+    const userRef = doc(db, USER_COLLECTION, uid);
+    await updateDoc(userRef, {
+        status,
+        updatedAt: serverTimestamp(),
+    });
 }
 
 export async function fetchClubsForUser(uid: string): Promise<Club[]> {

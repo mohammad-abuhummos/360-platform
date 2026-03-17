@@ -1,5 +1,6 @@
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from "@headlessui/react";
 import clsx from "clsx";
+import { Link, useNavigate } from "react-router";
 import type { Route } from "./+types/team";
 import { DashboardLayout } from "../components/dashboard-layout";
 import { Heading, Subheading } from "../components/heading";
@@ -16,19 +17,17 @@ import { Fragment, useMemo, useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/auth-context";
 import {
     subscribeToClubMembers,
-    inviteClubMember,
-    updateClubMember,
     removeClubMember,
     activateClubMember,
     generatePassword,
     type ClubMember,
-    type MemberRole,
     type MemberSegment,
     type MemberStatus,
+    type PlayerProfile,
 } from "../lib/firestore-team";
+import { getClubRoles, type Role } from "../lib/firestore-roles";
 
 type IconProps = SVGProps<SVGSVGElement>;
-type TeamRole = MemberRole;
 type SortOption = "name" | "role" | "title" | "status";
 type SortDirection = "asc" | "desc";
 
@@ -36,14 +35,22 @@ type TeamMember = {
     id: string;
     name: string;
     initials: string;
-    role: TeamRole;
+    role: string;
+    roleId?: string | null;
+    roleName?: string | null;
     title?: string | null;
     email?: string;
     segment?: MemberSegment;
     status: MemberStatus;
+    phoneNumber?: string | null;
+    dateOfBirth?: string | null;
+    profileImageUrl?: string | null;
+    playerProfile?: PlayerProfile | null;
 };
 
-const roleOptions: TeamRole[] = ["User", "Staff", "Admin"];
+function getDisplayRole(member: TeamMember): string {
+    return member.roleName || member.role || "—";
+}
 const segmentOptions: { value: MemberSegment; label: string }[] = [
     { value: "player", label: "Player" },
     { value: "staff", label: "Staff Member" },
@@ -55,17 +62,23 @@ function clubMemberToTeamMember(member: ClubMember): TeamMember {
         name: member.name,
         initials: member.initials,
         role: member.role,
+        roleId: member.roleId,
+        roleName: member.roleName,
         title: member.title,
         email: member.email,
         segment: member.segment,
         status: member.status,
+        phoneNumber: member.phoneNumber,
+        dateOfBirth: member.dateOfBirth,
+        profileImageUrl: member.profileImageUrl,
+        playerProfile: member.playerProfile,
     };
 }
 
 function filterMembers(
     members: TeamMember[],
     query: string,
-    roleFilter: TeamRole | "All" = "All",
+    roleFilter: string | "All" = "All",
     sortBy: SortOption = "name",
     sortDir: SortDirection = "asc"
 ) {
@@ -81,7 +94,7 @@ function filterMembers(
     }
 
     if (roleFilter !== "All") {
-        filtered = filtered.filter((member) => member.role === roleFilter);
+        filtered = filtered.filter((member) => getDisplayRole(member) === roleFilter || member.roleId === roleFilter);
     }
 
     filtered = [...filtered].sort((a, b) => {
@@ -91,8 +104,8 @@ function filterMembers(
             aVal = a.name;
             bVal = b.name;
         } else if (sortBy === "role") {
-            aVal = a.role;
-            bVal = b.role;
+            aVal = getDisplayRole(a);
+            bVal = getDisplayRole(b);
         } else if (sortBy === "status") {
             aVal = a.status;
             bVal = b.status;
@@ -148,20 +161,20 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [query, setQuery] = useState("");
-    const [roleFilter, setRoleFilter] = useState<TeamRole | "All">("All");
+    const [roleFilter, setRoleFilter] = useState<string | "All">("All");
+    const [roles, setRoles] = useState<Role[]>([]);
     const [sortBy, setSortBy] = useState<SortOption>("status");
     const [sortDir, setSortDir] = useState<SortDirection>("asc");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [inviteModalOpen, setInviteModalOpen] = useState(false);
-    const [inviteSegment, setInviteSegment] = useState<MemberSegment>("player");
-    const [editMember, setEditMember] = useState<TeamMember | null>(null);
     const [deleteMember, setDeleteMember] = useState<TeamMember | null>(null);
     const [activateMember, setActivateMember] = useState<TeamMember | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (!activeClub?.id) {
             setAllMembers([]);
             setLoading(false);
+            setRoles([]);
             return;
         }
 
@@ -181,6 +194,16 @@ export default function Home() {
         );
 
         return () => unsubscribe();
+    }, [activeClub?.id]);
+
+    useEffect(() => {
+        if (!activeClub?.id) {
+            setRoles([]);
+            return;
+        }
+        getClubRoles(activeClub.id)
+            .then(setRoles)
+            .catch(() => setRoles([]));
     }, [activeClub?.id]);
 
     const playerMembers = useMemo(
@@ -235,11 +258,6 @@ export default function Home() {
         }
     }, [activeClub, allMembers]);
 
-    const handleOpenInviteModal = (segment: MemberSegment = "player") => {
-        setInviteSegment(segment);
-        setInviteModalOpen(true);
-    };
-
     const handleEmailMember = (member: TeamMember) => {
         if (member.email) {
             window.location.href = `mailto:${member.email}`;
@@ -273,7 +291,7 @@ export default function Home() {
                         onClearSelection={clearSelection}
                         clubName={activeClub.name}
                         onExport={handleExport}
-                        onInvite={() => handleOpenInviteModal()}
+                        onInvite={() => navigate("/team/create")}
                         canExport={false}
                         pendingCount={0}
                     />
@@ -297,7 +315,7 @@ export default function Home() {
                         onClearSelection={clearSelection}
                         clubName={activeClub.name}
                         onExport={handleExport}
-                        onInvite={() => handleOpenInviteModal()}
+                        onInvite={() => navigate("/team/create")}
                         canExport={false}
                         pendingCount={0}
                     />
@@ -326,7 +344,7 @@ export default function Home() {
                     onClearSelection={clearSelection}
                     clubName={activeClub.name}
                     onExport={handleExport}
-                    onInvite={() => handleOpenInviteModal()}
+                    onInvite={() => navigate("/team/create")}
                     canExport={allMembers.length > 0}
                     pendingCount={pendingCount}
                 />
@@ -339,6 +357,7 @@ export default function Home() {
                     sortDir={sortDir}
                     onSortChange={handleSortChange}
                     summary={{ players: playerMembers.length, staff: staffMembers.length, pending: pendingCount }}
+                    roles={roles}
                 />
                 <div className="grid gap-6 lg:grid-cols-2">
                     <TeamSection
@@ -349,8 +368,9 @@ export default function Home() {
                         emptyCta="Invite a player"
                         selectedIds={selectedIds}
                         onToggleSelection={toggleSelection}
-                        onInvite={() => handleOpenInviteModal("player")}
-                        onEditMember={setEditMember}
+                        onInvite={() => navigate("/team/create?segment=player")}
+                        onViewMember={(m) => navigate(`/team/${m.id}`)}
+                        onEditMember={(m) => navigate(`/team/${m.id}/edit`)}
                         onDeleteMember={setDeleteMember}
                         onActivateMember={setActivateMember}
                         onEmailMember={handleEmailMember}
@@ -363,28 +383,15 @@ export default function Home() {
                         emptyCta="Invite staff member"
                         selectedIds={selectedIds}
                         onToggleSelection={toggleSelection}
-                        onInvite={() => handleOpenInviteModal("staff")}
-                        onEditMember={setEditMember}
+                        onInvite={() => navigate("/team/create?segment=staff")}
+                        onViewMember={(m) => navigate(`/team/${m.id}`)}
+                        onEditMember={(m) => navigate(`/team/${m.id}/edit`)}
                         onDeleteMember={setDeleteMember}
                         onActivateMember={setActivateMember}
                         onEmailMember={handleEmailMember}
                     />
                 </div>
             </div>
-
-            <InviteMemberModal
-                open={inviteModalOpen}
-                onClose={() => setInviteModalOpen(false)}
-                clubId={activeClub.id}
-                defaultSegment={inviteSegment}
-            />
-
-            <EditMemberModal
-                open={!!editMember}
-                onClose={() => setEditMember(null)}
-                clubId={activeClub.id}
-                member={editMember}
-            />
 
             <DeleteMemberModal
                 open={!!deleteMember}
@@ -400,311 +407,6 @@ export default function Home() {
                 member={activateMember}
             />
         </DashboardLayout>
-    );
-}
-
-function InviteMemberModal({
-    open,
-    onClose,
-    clubId,
-    defaultSegment,
-}: {
-    open: boolean;
-    onClose: () => void;
-    clubId: string;
-    defaultSegment: MemberSegment;
-}) {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [role, setRole] = useState<MemberRole>("User");
-    const [segment, setSegment] = useState<MemberSegment>(defaultSegment);
-    const [title, setTitle] = useState("");
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (open) {
-            setSegment(defaultSegment);
-            setName("");
-            setEmail("");
-            setRole("User");
-            setTitle("");
-            setError(null);
-        }
-    }, [open, defaultSegment]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!name.trim() || !email.trim()) {
-            setError("Name and email are required");
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email address");
-            return;
-        }
-
-        setSubmitting(true);
-        setError(null);
-
-        try {
-            await inviteClubMember(clubId, {
-                name: name.trim(),
-                email: email.trim(),
-                role,
-                segment,
-                title: title.trim() || undefined,
-            });
-            onClose();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to invite member");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    return (
-        <Dialog open={open} onClose={onClose} size="md">
-            <DialogTitle>Invite Team Member</DialogTitle>
-            <DialogDescription>Send an invitation to join your team.</DialogDescription>
-
-            <form onSubmit={handleSubmit}>
-                <DialogBody className="space-y-4">
-                    {error && (
-                        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/50 dark:text-red-400">
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Full Name <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="John Smith"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Email <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="john@example.com"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Member Type
-                            </label>
-                            <Select
-                                value={segment}
-                                onChange={(e) => setSegment(e.target.value as MemberSegment)}
-                            >
-                                {segmentOptions.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                    </option>
-                                ))}
-                            </Select>
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Role
-                            </label>
-                            <Select
-                                value={role}
-                                onChange={(e) => setRole(e.target.value as MemberRole)}
-                            >
-                                {roleOptions.map((r) => (
-                                    <option key={r} value={r}>
-                                        {r}
-                                    </option>
-                                ))}
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                            Title / Position
-                        </label>
-                        <Input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder={segment === "player" ? "e.g., Forward · U18" : "e.g., Head Coach"}
-                        />
-                        <Text className="mt-1 text-xs text-zinc-500">Optional</Text>
-                    </div>
-                </DialogBody>
-
-                <DialogActions>
-                    <Button plain onClick={onClose} disabled={submitting}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" color="amber" disabled={submitting}>
-                        {submitting ? "Sending..." : "Send Invitation"}
-                    </Button>
-                </DialogActions>
-            </form>
-        </Dialog>
-    );
-}
-
-function EditMemberModal({
-    open,
-    onClose,
-    clubId,
-    member,
-}: {
-    open: boolean;
-    onClose: () => void;
-    clubId: string;
-    member: TeamMember | null;
-}) {
-    const [name, setName] = useState("");
-    const [role, setRole] = useState<MemberRole>("User");
-    const [segment, setSegment] = useState<MemberSegment>("player");
-    const [title, setTitle] = useState("");
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (open && member) {
-            setName(member.name);
-            setRole(member.role);
-            setSegment(member.segment || "player");
-            setTitle(member.title || "");
-            setError(null);
-        }
-    }, [open, member]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!member) return;
-
-        if (!name.trim()) {
-            setError("Name is required");
-            return;
-        }
-
-        setSubmitting(true);
-        setError(null);
-
-        try {
-            await updateClubMember(clubId, member.id, {
-                name: name.trim(),
-                role,
-                segment,
-                title: title.trim() || null,
-            });
-            onClose();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to update member");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    if (!member) return null;
-
-    return (
-        <Dialog open={open} onClose={onClose} size="md">
-            <DialogTitle>Edit Profile</DialogTitle>
-            <DialogDescription>Update {member.name}'s profile information.</DialogDescription>
-
-            <form onSubmit={handleSubmit}>
-                <DialogBody className="space-y-4">
-                    {error && (
-                        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/50 dark:text-red-400">
-                            {error}
-                        </div>
-                    )}
-
-                    <div>
-                        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                            Full Name <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Member Type
-                            </label>
-                            <Select
-                                value={segment}
-                                onChange={(e) => setSegment(e.target.value as MemberSegment)}
-                            >
-                                {segmentOptions.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                    </option>
-                                ))}
-                            </Select>
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                Role
-                            </label>
-                            <Select
-                                value={role}
-                                onChange={(e) => setRole(e.target.value as MemberRole)}
-                            >
-                                {roleOptions.map((r) => (
-                                    <option key={r} value={r}>
-                                        {r}
-                                    </option>
-                                ))}
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                            Title / Position
-                        </label>
-                        <Input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder={segment === "player" ? "e.g., Forward · U18" : "e.g., Head Coach"}
-                        />
-                    </div>
-                </DialogBody>
-
-                <DialogActions>
-                    <Button plain onClick={onClose} disabled={submitting}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" color="amber" disabled={submitting}>
-                        {submitting ? "Saving..." : "Save Changes"}
-                    </Button>
-                </DialogActions>
-            </form>
-        </Dialog>
     );
 }
 
@@ -988,15 +690,17 @@ function TeamControls({
     sortDir,
     onSortChange,
     summary,
+    roles,
 }: {
     query: string;
     onQueryChange: (value: string) => void;
-    roleFilter: TeamRole | "All";
-    onRoleFilterChange: (role: TeamRole | "All") => void;
+    roleFilter: string | "All";
+    onRoleFilterChange: (role: string | "All") => void;
     sortBy: SortOption;
     sortDir: SortDirection;
     onSortChange: (sort: SortOption) => void;
     summary: { players: number; staff: number; pending: number };
+    roles: Role[];
 }) {
     return (
         <div className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
@@ -1031,12 +735,12 @@ function TeamControls({
                     <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">Filter</span>
                     <div className="flex gap-1">
                         <FilterChip label="All" active={roleFilter === "All"} onClick={() => onRoleFilterChange("All")} />
-                        {roleOptions.map((role) => (
+                        {roles.map((role) => (
                             <FilterChip
-                                key={role}
-                                label={role}
-                                active={roleFilter === role}
-                                onClick={() => onRoleFilterChange(role)}
+                                key={role.id}
+                                label={role.name}
+                                active={roleFilter === role.name || roleFilter === role.id}
+                                onClick={() => onRoleFilterChange(role.name)}
                             />
                         ))}
                     </div>
@@ -1066,6 +770,7 @@ function TeamSection({
     selectedIds,
     onToggleSelection,
     onInvite,
+    onViewMember,
     onEditMember,
     onDeleteMember,
     onActivateMember,
@@ -1079,6 +784,7 @@ function TeamSection({
     selectedIds: Set<string>;
     onToggleSelection: (id: string) => void;
     onInvite: () => void;
+    onViewMember?: (member: TeamMember) => void;
     onEditMember: (member: TeamMember) => void;
     onDeleteMember: (member: TeamMember) => void;
     onActivateMember: (member: TeamMember) => void;
@@ -1122,6 +828,7 @@ function TeamSection({
                                             sectionLabel={label}
                                             isSelected={selectedIds.has(`${label}-${member.id}`)}
                                             onToggleSelection={() => onToggleSelection(`${label}-${member.id}`)}
+                                            onView={() => onViewMember?.(member)}
                                             onEdit={() => onEditMember(member)}
                                             onDelete={() => onDeleteMember(member)}
                                             onActivate={() => onActivateMember(member)}
@@ -1147,6 +854,7 @@ function TeamSection({
                                             sectionLabel={label}
                                             isSelected={selectedIds.has(`${label}-${member.id}`)}
                                             onToggleSelection={() => onToggleSelection(`${label}-${member.id}`)}
+                                            onView={() => onViewMember?.(member)}
                                             onEdit={() => onEditMember(member)}
                                             onDelete={() => onDeleteMember(member)}
                                             onActivate={() => onActivateMember(member)}
@@ -1179,6 +887,7 @@ function TeamMemberCard({
     sectionLabel,
     isSelected,
     onToggleSelection,
+    onView,
     onEdit,
     onDelete,
     onActivate,
@@ -1188,6 +897,7 @@ function TeamMemberCard({
     sectionLabel: string;
     isSelected: boolean;
     onToggleSelection: () => void;
+    onView?: () => void;
     onEdit: () => void;
     onDelete: () => void;
     onActivate: () => void;
@@ -1218,13 +928,21 @@ function TeamMemberCard({
                 {isSelected && <CheckIcon className="size-3" />}
             </button>
 
-            <Avatar initials={member.initials} alt={member.name} className="size-10 bg-zinc-700 text-white" />
+            <button
+                type="button"
+                onClick={() => onView?.()}
+                className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left transition hover:opacity-90"
+            >
+                <Avatar initials={member.initials} alt={member.name} className="size-10 shrink-0 bg-zinc-700 text-white" />
 
-            <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-white">{member.name}</span>
-                    <RoleBadge role={member.role} />
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium text-white">{member.name}</span>
+                    <RoleBadge role={getDisplayRole(member)} />
                     {isPending && <Badge color="yellow">Pending</Badge>}
+                    {member.status === "inactive" && !isPending && (
+                        <Badge color="zinc">Inactive</Badge>
+                    )}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-zinc-400">
                     {member.title && <span className="truncate">{member.title}</span>}
@@ -1233,6 +951,7 @@ function TeamMemberCard({
                     )}
                 </div>
             </div>
+            </button>
 
             <div className="flex shrink-0 items-center gap-1">
                 {isPending && (
@@ -1273,13 +992,13 @@ function TeamMemberCard({
     );
 }
 
-function RoleBadge({ role }: { role: TeamRole }) {
-    const colors = {
+function RoleBadge({ role }: { role: string }) {
+    const colors: Record<string, "amber" | "zinc" | "green"> = {
         Admin: "amber",
         Staff: "zinc",
         User: "green",
-    } as const;
-    return <Badge color={colors[role]}>{role}</Badge>;
+    };
+    return <Badge color={colors[role] ?? "zinc"}>{role}</Badge>;
 }
 
 function TeamMemberActions({

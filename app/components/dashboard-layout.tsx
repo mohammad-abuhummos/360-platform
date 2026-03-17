@@ -3,6 +3,8 @@ import { useLocation } from "react-router";
 import { useState, useMemo } from "react";
 import * as Headless from "@headlessui/react";
 import { useAuth } from "~/context/auth-context";
+import { useUserPermissions } from "~/hooks/use-user-permissions";
+import { canAccessTab } from "~/lib/firestore-roles";
 import type { Club } from "~/lib/firestore-users";
 import { SidebarLayout } from "./sidebar-layout";
 import { Button } from "./button";
@@ -100,7 +102,7 @@ const navigationSections: NavigationSection[] = [
           { label: "Opponents", href: "/games/opponents" },
         ]
       },
-      { label: "Settings", icon: SettingsIcon },
+      { label: "Settings", icon: SettingsIcon, href: "/settings" },
       { label: "Support", icon: LifebuoyIcon },
     ],
   },
@@ -249,6 +251,18 @@ function DashboardSidebar() {
   const location = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const { profile, signOut } = useAuth();
+  const { permissions, loading: permissionsLoading } = useUserPermissions();
+
+  const filteredSections = useMemo(() => {
+    if (permissionsLoading) return navigationSections;
+    return navigationSections.map((section, sectionIndex) => {
+      if (sectionIndex === navigationSections.length - 1) {
+        return section;
+      }
+      const filteredItems = section.items.filter((item) => canAccessTab(permissions, item.label));
+      return { ...section, items: filteredItems };
+    }).filter((section) => section.items.length > 0);
+  }, [permissions, permissionsLoading]);
 
   const userDisplayName = profile?.displayName ?? "SMT Dev";
   const userEmail = profile?.email ?? "malek.kashouqa@smt.com.jo";
@@ -279,7 +293,7 @@ function DashboardSidebar() {
         </SidebarHeader>
 
         <SidebarBody>
-          {navigationSections.map((section, index) => (
+          {filteredSections.map((section, index) => (
             <SidebarSection key={section.heading ?? index}>
               {section.heading && <SidebarHeading className="text-white/70">{section.heading}</SidebarHeading>}
               {section.items.map((item) => {
