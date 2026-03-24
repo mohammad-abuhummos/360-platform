@@ -574,7 +574,10 @@ function OrganizationDetailView({
   onClose: () => void;
 }) {
   const displayName = organization.id === "1" ? clubName : organization.name;
-  const teamCode = organization.id === "1" ? clubSlug.toUpperCase().replace(/-/g, "").slice(0, 6) : organization.groupCode;
+  const teamCode =
+    organization.id === "1" && clubSlug.trim()
+      ? clubSlug.toUpperCase().replace(/-/g, "").slice(0, 6)
+      : organization.groupCode;
 
   return (
     <div className="space-y-6">
@@ -605,7 +608,7 @@ function OrganizationDetailView({
               </Heading>
               <Text className="mt-1 text-sm text-zinc-500">Organization</Text>
             </div>
-            <div className="mt-6">
+            <div className="relative mt-6">
               <Menu>
                 <MenuButton className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
                   Actions
