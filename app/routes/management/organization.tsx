@@ -1,9 +1,12 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "../../components/dashboard-layout";
 import { Heading } from "../../components/heading";
+import { Text } from "../../components/text";
 import { Button } from "../../components/button";
 import { Input, InputGroup } from "../../components/input";
 import { Avatar } from "../../components/avatar";
+import { useAuth } from "~/context/auth-context";
+import { ManagementContactsPanel } from "~/components/management/management-contacts-panel";
 import {
   Dialog,
   DialogTitle,
@@ -217,10 +220,24 @@ const initialOrganizations: OrganizationType[] = [
   },
 ];
 
+function findOrganizationById(orgs: OrganizationType[], id: string): OrganizationType | null {
+  for (const org of orgs) {
+    if (org.id === id) return org;
+    if (org.children?.length) {
+      const found = findOrganizationById(org.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export default function Organization() {
+  const { activeClub } = useAuth();
   const [organizations, setOrganizations] = useState<OrganizationType[]>(initialOrganizations);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(["1"]));
+  const [viewMode, setViewMode] = useState<"tree" | "detail">("tree");
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newOrg, setNewOrg] = useState({
     name: "",
@@ -279,6 +296,18 @@ export default function Organization() {
     [organizations, searchQuery]
   );
 
+  const selectedOrg = selectedOrgId ? findOrganizationById(organizations, selectedOrgId) : null;
+
+  const openOrgDetail = (id: string) => {
+    setSelectedOrgId(id);
+    setViewMode("detail");
+  };
+
+  const closeOrgDetail = () => {
+    setViewMode("tree");
+    setSelectedOrgId(null);
+  };
+
   // Generate random group code
   const generateGroupCode = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -315,8 +344,12 @@ export default function Organization() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
+              type="button"
+              onClick={() => {
+                if (viewMode === "detail") closeOrgDetail();
+              }}
               className="flex items-center justify-center rounded-lg border border-zinc-200 bg-white p-2 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
-              aria-label="Back"
+              aria-label={viewMode === "detail" ? "Back to hierarchy" : "Back"}
             >
               <ChevronLeftIcon className="h-5 w-5" />
             </button>
@@ -335,97 +368,120 @@ export default function Organization() {
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-1 items-center gap-3">
-            <InputGroup className="max-w-md">
-              {/* <SearchIcon data-slot="icon" className="text-zinc-400 size-5" /> */}
-              <Input
-                type="search"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </InputGroup>
-            <Button outline className="text-sm">
-              <FilterIcon className="h-4 w-4" />
-              Filters
-            </Button>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button outline className="text-sm">
-              Edit sort order
-            </Button>
-            <Button
-              color="blue"
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <PlusIcon className="h-4 w-4" />
-              Create new group
-            </Button>
-            <button
-              onClick={collapseAll}
-              className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              <ChevronUpIcon className="h-4 w-4" />
-              Collapse all
-            </button>
-          </div>
-        </div>
+        {viewMode === "detail" && selectedOrg && activeClub && (
+          <OrganizationDetailView
+            organization={selectedOrg}
+            clubName={activeClub.name}
+            clubSlug={activeClub.slug}
+            onClose={closeOrgDetail}
+            clubId={activeClub.id}
+          />
+        )}
 
-        {/* Table */}
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Group code
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Groups
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Users
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Players
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Admins/Staff
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Gender
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Birth year
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Sport
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        {viewMode === "detail" && selectedOrg && !activeClub && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+            Select a club from the sidebar to view organization details and contacts.
+          </div>
+        )}
 
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {filteredOrganizations.map((org) => (
-                  <OrganizationRow
-                    key={org.id}
-                    organization={org}
-                    level={0}
-                    expandedIds={expandedIds}
-                    onToggleExpand={toggleExpand}
+        {viewMode === "tree" && (
+          <>
+            {/* Controls */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-1 items-center gap-3">
+                <InputGroup className="max-w-md">
+                  <Input
+                    type="search"
+                    placeholder="Search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </InputGroup>
+                <Button outline className="text-sm">
+                  <FilterIcon className="h-4 w-4" />
+                  Filters
+                </Button>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button outline className="text-sm">
+                  Edit sort order
+                </Button>
+                <Button
+                  color="blue"
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Create new group
+                </Button>
+                <button
+                  type="button"
+                  onClick={collapseAll}
+                  className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  <ChevronUpIcon className="h-4 w-4" />
+                  Collapse all
+                </button>
+              </div>
+            </div>
+
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Click an organization name to open its overview and manage contacts (added from your team roster only).
+            </p>
+
+            {/* Table */}
+            <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Group code
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Groups
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Users
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Players
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Admins/Staff
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Gender
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Birth year
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Sport
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-zinc-600 dark:text-zinc-400" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    {filteredOrganizations.map((org) => (
+                      <OrganizationRow
+                        key={org.id}
+                        organization={org}
+                        level={0}
+                        expandedIds={expandedIds}
+                        onToggleExpand={toggleExpand}
+                        onSelectOrganization={openOrgDetail}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create Dialog */}
@@ -504,17 +560,141 @@ export default function Organization() {
   );
 }
 
+function OrganizationDetailView({
+  organization,
+  clubName,
+  clubSlug,
+  clubId,
+  onClose,
+}: {
+  organization: OrganizationType;
+  clubName: string;
+  clubSlug: string;
+  clubId: string;
+  onClose: () => void;
+}) {
+  const displayName = organization.id === "1" ? clubName : organization.name;
+  const teamCode = organization.id === "1" ? clubSlug.toUpperCase().replace(/-/g, "").slice(0, 6) : organization.groupCode;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Heading level={2} className="text-lg font-semibold text-zinc-900 dark:text-white">
+          {displayName}
+        </Heading>
+        <Button outline className="text-sm" onClick={onClose}>
+          Back to hierarchy
+        </Button>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(260px,320px)_1fr]">
+        <aside className="space-y-4">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex flex-col items-center text-center">
+              <Avatar
+                initials={displayName
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+                className="h-16 w-16 bg-zinc-900 text-lg text-white"
+              />
+              <Heading level={3} className="mt-4 text-base font-semibold text-zinc-900 dark:text-white">
+                {displayName}
+              </Heading>
+              <Text className="mt-1 text-sm text-zinc-500">Organization</Text>
+            </div>
+            <div className="mt-6">
+              <Menu>
+                <MenuButton className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                  Actions
+                </MenuButton>
+                <MenuItems className="z-20 mt-2 w-full rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                  <MenuItem>
+                    {({ focus }) => (
+                      <button
+                        type="button"
+                        className={clsx(
+                          "block w-full px-4 py-2 text-left text-sm",
+                          focus ? "bg-zinc-100 dark:bg-zinc-800" : ""
+                        )}
+                      >
+                        Edit organization
+                      </button>
+                    )}
+                  </MenuItem>
+                </MenuItems>
+              </Menu>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Heading level={4} className="text-sm font-semibold text-zinc-900 dark:text-white">
+              Overview
+            </Heading>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-zinc-500">Team code</dt>
+                <dd className="font-medium text-zinc-900 dark:text-white">{teamCode}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-zinc-500">Invites</dt>
+                <dd className="font-medium text-zinc-900 dark:text-white">Enabled</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-zinc-500">Season start</dt>
+                <dd className="font-medium text-zinc-900 dark:text-white">October</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-zinc-500">Current season</dt>
+                <dd className="text-right font-medium text-zinc-900 dark:text-white">
+                  10/1/2025 – 10/1/2026
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-zinc-500">Branding</dt>
+                <dd className="font-medium text-zinc-900 dark:text-white">#000000</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-zinc-500">Sport</dt>
+                <dd className="font-medium text-zinc-900 dark:text-white">{organization.sport}</dd>
+              </div>
+            </dl>
+          </div>
+        </aside>
+
+        <section className="min-w-0 space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <Heading level={3} className="text-base font-semibold text-zinc-900 dark:text-white">
+                Contacts
+              </Heading>
+              <Text className="text-sm text-zinc-500">
+                Add people from your team roster only. Click a name to open their profile.
+              </Text>
+            </div>
+          </div>
+          <ManagementContactsPanel clubId={clubId} showRoleColumn />
+        </section>
+      </div>
+    </div>
+  );
+}
+
 // Organization Row Component
 function OrganizationRow({
   organization,
   level,
   expandedIds,
   onToggleExpand,
+  onSelectOrganization,
 }: {
   organization: OrganizationType;
   level: number;
   expandedIds: Set<string>;
   onToggleExpand: (id: string) => void;
+  onSelectOrganization: (id: string) => void;
 }) {
   const isExpanded = expandedIds.has(organization.id);
   const hasChildren = organization.children && organization.children.length > 0;
@@ -542,9 +722,13 @@ function OrganizationRow({
               initials={organization.name.substring(0, 2).toUpperCase()}
               className="h-8 w-8 bg-zinc-200 text-zinc-600"
             />
-            <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+            <button
+              type="button"
+              onClick={() => onSelectOrganization(organization.id)}
+              className="text-left text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+            >
               {organization.name}
-            </a>
+            </button>
           </div>
         </td>
         <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -640,6 +824,7 @@ function OrganizationRow({
             level={level + 1}
             expandedIds={expandedIds}
             onToggleExpand={onToggleExpand}
+            onSelectOrganization={onSelectOrganization}
           />
         ))}
     </>
