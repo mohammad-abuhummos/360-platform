@@ -82,7 +82,8 @@ const navigationSections: NavigationSection[] = [
       },
       { label: "Registrations", icon: ClipboardIcon, href: "/registrations" },
       { label: "Posts", icon: MegaphoneIcon, href: "/posts" },
-      { label: "Scheduling", icon: ClockIcon },
+      // TODO: Add scheduling
+      // { label: "Scheduling", icon: ClockIcon },
       {
         label: "Development",
         icon: TrophyIcon,
@@ -102,8 +103,8 @@ const navigationSections: NavigationSection[] = [
           { label: "Opponents", href: "/games/opponents" },
         ]
       },
-      { label: "Settings", icon: SettingsIcon, href: "/settings" },
-      { label: "Support", icon: LifebuoyIcon },
+      // { label: "Settings", icon: SettingsIcon, href: "/settings" },
+      // { label: "Support", icon: LifebuoyIcon },
     ],
   },
   {
